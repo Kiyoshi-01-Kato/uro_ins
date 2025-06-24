@@ -108,7 +108,7 @@ void UroIns::evaluate_usbl_reliability()
   float diff_y = subsea_.ned_position[1] - subsea_old_.ned_position[1];
   float diff_distance = sqrt((diff_x * diff_x) + (diff_y * diff_y));
 
-  float v_limit = 3.0;
+  float v_limit = 1.54332;  //3knot
 
   if (elapsed_time * v_limit < diff_distance){
     usbl_reliability_level = 1;
