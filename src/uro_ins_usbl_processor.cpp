@@ -154,6 +154,7 @@ void UroIns::broadcast_usbl_tf()
   usbl_posi.data.push_back(y);
   usbl_posi.data.push_back(- x);
   usbl_posi.data.push_back(- z);
+  usbl_posi.data.push_back(subsea_.elevation);
   usbl_posi_->publish(usbl_posi);
 }
 
