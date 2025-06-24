@@ -27,9 +27,6 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef URO_INS_HPP
-#define URO_INS_HPP
-
 #include "rclcpp/rclcpp.hpp"
 #include <cstdlib>
 #include <cstdio>
@@ -38,14 +35,12 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <memory>
 
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "std_msgs/msg/int32_multi_array.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include <tf2_ros/static_transform_broadcaster.h>
-#include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <visualization_msgs/msg/marker.hpp>
 
@@ -63,52 +58,61 @@
 #include <netdb.h>
 #endif
 
+#include "uro_ins.hpp"
 #include "uro_subsonus.hpp"
 
 #define RADIANS_TO_DEGREES (180.0/M_PI)
 
-class UroSubsonus;
-
-class UroIns : public rclcpp::Node
+UroIns::UroIns() : Node("ins_node")
 {
-  public:
-    UroIns();
-    void set_subsonus(std::shared_ptr<UroSubsonus> usbl);
-    void set_ship_data(subsonus_system_state_packet_t surface);
-    void set_usbl_data(subsonus_track_packet_t subsea);
+  using namespace std::chrono_literals;
+  //subsonus_publisher_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("subsonus_data", 10);
+  tf_broadcast_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+  static_tf_broadcast_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+  marker_ship_ = this->create_publisher<visualization_msgs::msg::Marker>("marker_ship", 10);
+  marker_usbl_ = this->create_publisher<visualization_msgs::msg::Marker>("marker_usbl", 10);
+  usbl_posi_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("usbl_posi", 10);
 
-  private:
-    void usbl_on_timer();
+  timer_subsonus_ = this->create_wall_timer(
+    10ms, 
+    std::bind(&UroIns::usbl_on_timer, this)
+  );
 
-    void process_usbl_data();
-    void evaluate_usbl_reliability();
-    void broadcast_usbl_tf();
-    void publish_ship_marker();
-    void broadcast_map_tf();
-    void broadcast_ship_tf();
-    void draw_usbl();
-    void draw_ship();
-    void check_usbl_receive();
+  timer_publish_ship_marker_ = this->create_wall_timer(
+    200ms, 
+    std::bind(&UroIns::publish_ship_marker, this)
+  );
 
-    std::shared_ptr<UroSubsonus> usbl_;
-    std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcast_;
-    std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcast_;
-    rclcpp::TimerBase::SharedPtr timer_subsonus_;
-    rclcpp::TimerBase::SharedPtr timer_publish_ship_marker_;
-    rclcpp::TimerBase::SharedPtr timer_check_usbl_receive_;
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_ship_;
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_usbl_;
-    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr usbl_posi_;  //6月OKIの暫定機能
+  timer_check_usbl_receive_ = this->create_wall_timer(
+    6s, 
+    std::bind(&UroIns::check_usbl_receive, this)
+  );
 
-    subsonus_system_state_packet_t surface_;
-    subsonus_track_packet_t subsea_;
-    bool is_ship_data_received;
-    bool is_usbl_data_received;
-    bool is_map_tf_created;
-    int usbl_reliability_level; //０：未受信、１：速度3knot以上、２：傘の範囲外、３：正常
-    float map_origin_lat;
-    float map_origin_lon;
-    float map_origin_h;
-};
+  is_ship_data_received = false;
+  is_usbl_data_received = false;
+  is_map_tf_created = false;
+  usbl_reliability_level = 0;
+  map_origin_lat = 0.0;
+  map_origin_lon = 0.0;
+  map_origin_h = 0.0;
+  surface_ = {};
+  subsea_ = {};
+  subsea_old_ = {};
+}
 
-#endif //URO_INS_HPP
+int main(int argc, char ** argv)
+{
+  //(void) argc;
+  //(void) argv;
+
+  rclcpp::init(argc, argv);
+  auto ins = std::make_shared<UroIns>();
+  auto usbl = std::make_shared<UroSubsonus>(ins);
+  usbl->initialize();
+  ins->set_subsonus(usbl);
+  rclcpp::spin(ins);
+  rclcpp::shutdown();
+
+
+	return EXIT_SUCCESS;
+}

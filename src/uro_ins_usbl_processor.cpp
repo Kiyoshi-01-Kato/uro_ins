@@ -32,6 +32,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <cstring>
+#include <cmath>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -77,7 +78,9 @@ void UroIns::set_ship_data(subsonus_system_state_packet_t surface)
 
 void UroIns::set_usbl_data(subsonus_track_packet_t subsea)
 {
+  subsea_old_ = subsea_;
   subsea_ = subsea;
+  is_usbl_data_received = true;
   process_usbl_data();
 }
 
@@ -88,7 +91,6 @@ void UroIns::usbl_on_timer()
 
 void UroIns::process_usbl_data()
 {
-  is_usbl_data_received = true;
   evaluate_usbl_reliability();
   if (is_map_tf_created == true){
     broadcast_usbl_tf();
@@ -98,7 +100,29 @@ void UroIns::process_usbl_data()
 
 void UroIns::evaluate_usbl_reliability()
 {
+  int elapsed_sec = subsea_.observer_unix_time_seconds - subsea_old_.observer_unix_time_seconds;
+  int elapsed_us = subsea_.observer_microseconds - subsea_old_.observer_microseconds;
+  float elapsed_time = elapsed_sec + elapsed_us * 0.001 * 0.001;
+
+  float diff_x = subsea_.ned_position[0] - subsea_old_.ned_position[0];
+  float diff_y = subsea_.ned_position[1] - subsea_old_.ned_position[1];
+  float diff_distance = sqrt((diff_x * diff_x) + (diff_y * diff_y));
+
+  float v_limit = 3.0;
+
+  if (elapsed_time * v_limit < diff_distance){
+    usbl_reliability_level = 1;
+    return;
+  }
+
+  float elevation_deg = subsea_.elevation * RADIANS_TO_DEGREES;
+  if (elevation_deg > 55){
+    usbl_reliability_level = 2;
+    return;
+  }
+
   usbl_reliability_level = 3;
+
 }
 
 void UroIns::broadcast_usbl_tf()
@@ -190,7 +214,8 @@ void UroIns::publish_ship_marker()
     }
   }
   broadcast_ship_tf();
-  draw_ship();  
+  draw_ship();
+  is_ship_data_received = false;
 }
 
 
@@ -242,7 +267,7 @@ void UroIns::broadcast_ship_tf()
   ship_transform.transform.translation.y = - x;
   ship_transform.transform.translation.z = 0;
   tf2::Quaternion quat;
-  quat.setRPY(0.0, 0.0, - surface_.orientation[3]);
+  quat.setRPY(0.0, 0.0, - surface_.orientation[2]);
   ship_transform.transform.rotation.x = quat.x();
   ship_transform.transform.rotation.y = quat.y();
   ship_transform.transform.rotation.z = quat.z();
