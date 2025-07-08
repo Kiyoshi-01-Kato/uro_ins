@@ -103,13 +103,13 @@ class UroIns : public rclcpp::Node
     subsonus_system_state_packet_t surface_;
     subsonus_track_packet_t subsea_;
     subsonus_track_packet_t subsea_old_;
-    bool is_ship_data_received;
-    bool is_usbl_data_received;
-    bool is_map_tf_created;
+    bool is_ship_data_received; //GNSS Compass(subsonus(surface))データ受信フラグ
+    bool is_usbl_data_received; //音響測位データ受信フラグ
+    bool is_map_tf_created;     //mapフレーム作成フラグ
     int usbl_reliability_level; //０：未受信、１：速度3knot以上、２：傘の範囲外、３：正常
-    float map_origin_lat;
-    float map_origin_lon;
-    float map_origin_h;
+    float map_origin_lat;       //map原点の緯度
+    float map_origin_lon;       //map原点の経度
+    float map_origin_h;         //map原点の高度
 };
 
 #endif //URO_INS_HPP
