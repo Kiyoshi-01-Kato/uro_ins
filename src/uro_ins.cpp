@@ -32,6 +32,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <cstring>
+#include <algorithm>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -101,6 +102,7 @@ UroIns::UroIns() : Node("ins_node")
   surface_ = {};
   subsea_ = {};
   subsea_old_ = {};
+  std::fill(std::begin(usbl_from_map_xyz), std::end(usbl_from_map_xyz), 0);
 }
 
 int main(int argc, char ** argv)
