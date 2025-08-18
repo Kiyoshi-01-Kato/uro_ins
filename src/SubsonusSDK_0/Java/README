@@ -1,0 +1,32 @@
+Advanced Navigation Packet Protocol Subsonus SDK Version 2.4
+Java Language SDK
+
+******************
+**** EXAMPLES ****
+******************
+
+ANPPExample is an example Java GUI that connects to a tcp and displays data in real time. There is a prebuilt jar in the dist directory that you can run without having to compile anything. This is an eclipse project.
+
+*******************
+**** COMPILING ****
+*******************
+
+All Platforms:
+	1. Install Eclipse http://www.eclipse.org/
+	2. Install WindowBuilder http://www.eclipse.org/windowbuilder/
+	3. In Eclipse, File->Import, Existing Projects into Workspace
+	4. Run button, choose Main class in com.advancednavigation.anppExample
+	5. To use WindowBuilder, right click, Open With->WindowBuilder Editor, then click on the design tab
+	
+*******************
+**** CHANGELOG ****
+*******************
+
+v1.0:
+	First Release
+v1.1:
+	Updated ANPP packets for compatibility with Subsonus v1.6 Firmware
+v2.0:
+	Updated ANPP packets for compatibility with Subsonus v2.0 Firmware
+v2.0:
+	Updated ANPP packets for compatibility with Subsonus v2.4 Firmware

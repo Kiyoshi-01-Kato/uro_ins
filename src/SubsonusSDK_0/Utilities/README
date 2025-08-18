@@ -1,0 +1,35 @@
+Advanced Navigation Packet Protocol Subsonus SDK Version 2.4
+Utilities
+
+******************
+**** EXAMPLES ****
+******************
+
+Example Log:
+	Contains a log file from Subsonus.
+	
+Matlab Log Import:
+	Matlab code for importing Subsonus Recorder exported CSV into Matlab.
+
+State Log Parser:
+	C code for parsing Subsonus Recorder exported CSV state log file.
+	
+*******************
+**** CHANGELOG ****
+*******************
+
+1.0:
+	First Release
+
+1.1:
+	Updated Example Logs to Subsonus Firmware v1.6 data logs
+	Updated Matlab import for Subsonus Firmware v1.6 data structures
+	Updated State log parser ANPP packet structure
+
+2.0:
+	Updated Example Logs to Subsonus Firmware v2.0 data logs
+	Updated Matlab import for Subsonus Firmware v2.0 data structures
+	Updated State log parser ANPP packet structure
+
+2.4:
+	Updated log parsers ANPP packet structure for v2.4 firmware
