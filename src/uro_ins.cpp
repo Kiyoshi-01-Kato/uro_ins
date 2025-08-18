@@ -32,6 +32,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <cstring>
+#include <algorithm>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -73,16 +74,19 @@ UroIns::UroIns() : Node("ins_node")
   marker_usbl_ = this->create_publisher<visualization_msgs::msg::Marker>("marker_usbl", 10);
   usbl_posi_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("usbl_posi", 10);
 
+  //subsonusデータ受信(音響測位データ受診時にUSBL描画)
   timer_subsonus_ = this->create_wall_timer(
     10ms, 
     std::bind(&UroIns::usbl_on_timer, this)
   );
 
+  //ship描画
   timer_publish_ship_marker_ = this->create_wall_timer(
     200ms, 
     std::bind(&UroIns::publish_ship_marker, this)
   );
 
+  //音響測位データ受信確認（指定時間受信していなければ未受信とする）
   timer_check_usbl_receive_ = this->create_wall_timer(
     6s, 
     std::bind(&UroIns::check_usbl_receive, this)
@@ -95,6 +99,10 @@ UroIns::UroIns() : Node("ins_node")
   map_origin_lat = 0.0;
   map_origin_lon = 0.0;
   map_origin_h = 0.0;
+  surface_ = {};
+  subsea_ = {};
+  subsea_old_ = {};
+  std::fill(std::begin(usbl_from_map_xyz), std::end(usbl_from_map_xyz), 0);
 }
 
 int main(int argc, char ** argv)
