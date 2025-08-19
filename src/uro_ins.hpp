@@ -103,6 +103,7 @@ class UroIns : public rclcpp::Node
     subsonus_system_state_packet_t surface_;
     subsonus_track_packet_t subsea_;
     subsonus_track_packet_t subsea_old_;
+    float usbl_from_map_xyz[3];
     bool is_ship_data_received; //GNSS Compass(subsonus(surface))データ受信フラグ
     bool is_usbl_data_received; //音響測位データ受信フラグ
     bool is_map_tf_created;     //mapフレーム作成フラグ
