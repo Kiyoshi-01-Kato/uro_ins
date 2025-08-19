@@ -120,17 +120,17 @@ void UroIns::evaluate_usbl_reliability()
   printf("subsea_old_.observer_unix_time_seconds = %d\n", subsea_old_.observer_unix_time_seconds);
 
   if (elapsed_time * v_limit < diff_distance){
-    usbl_reliability_level = 1;
+    usbl_reliability_level = 2;
     return;
   }
 
   float elevation_deg = subsea_.elevation * RADIANS_TO_DEGREES;
   if (elevation_deg > 55){
-    usbl_reliability_level = 2;
+    usbl_reliability_level = 3;
     return;
   }
 
-  usbl_reliability_level = 3;
+  usbl_reliability_level = 4;
 
 }
 
@@ -193,17 +193,17 @@ void UroIns::draw_usbl()
   marker_usbl.pose.orientation.z = 0;
   marker_usbl.pose.orientation.w = 1;
   marker_usbl.color.a = 0.7f;
-  if (usbl_reliability_level == 3){
+  if (usbl_reliability_level == 4){
     marker_usbl.color.r = 0.0f;
     marker_usbl.color.g = 0.0f;
     marker_usbl.color.b = 0.7f;
   }
-  else if (usbl_reliability_level == 2){
+  else if (usbl_reliability_level == 3){
     marker_usbl.color.r = 0.8f;
     marker_usbl.color.g = 0.4f;
     marker_usbl.color.b = 0.0f;
   }
-  else if (usbl_reliability_level == 1){
+  else if (usbl_reliability_level == 2){
     marker_usbl.color.r = 1.0f;
     marker_usbl.color.g = 0.0f;
     marker_usbl.color.b = 0.0f;
@@ -227,7 +227,6 @@ void UroIns::publish_ship_marker()
     }
   }
   broadcast_ship_tf();
-  //std::this_thread::sleep_for(std::chrono::milliseconds(400));
   draw_ship();
   is_ship_data_received = false;
 }
@@ -240,9 +239,6 @@ void UroIns::broadcast_map_tf()
   map_origin_h = surface_.height;
 
   auto now = this->get_clock()->now();
-  
-  //struct timespec time;
-  //clock_gettime(CLOCK_REALTIME, &time);
 
   geometry_msgs::msg::TransformStamped map_transform;
   map_transform.header.stamp = now;
@@ -334,9 +330,9 @@ void UroIns::draw_ship()
 
 void UroIns::check_usbl_receive()
 {
-  if (is_usbl_data_received == false){
+  if ((is_usbl_data_received == false)&&(is_ship_data_received == true)){
     printf("gray\n");
-    usbl_reliability_level = 0;
+    usbl_reliability_level = 1;
     auto now = this->get_clock()->now();
     visualization_msgs::msg::Marker marker_usbl;
     marker_usbl.header.frame_id = "map";
@@ -363,6 +359,42 @@ void UroIns::check_usbl_receive()
     marker_usbl.color.r = 0.6f;
     marker_usbl.color.g = 0.6f;
     marker_usbl.color.b = 0.6f;
+    marker_usbl_->publish(marker_usbl);
+  }
+  is_usbl_data_received = false;
+}
+
+void UroIns::check_ship_receive()
+{
+  if (is_ship_data_received == false){
+    printf("black\n");
+    usbl_reliability_level = 0;
+    auto now = this->get_clock()->now();
+    visualization_msgs::msg::Marker marker_usbl;
+    marker_usbl.header.frame_id = "map";
+    marker_usbl.header.stamp = now;
+    marker_usbl.ns = "marker_usbl";
+    marker_usbl.id = 0;
+    marker_usbl.type = visualization_msgs::msg::Marker::SPHERE;
+    marker_usbl.action = visualization_msgs::msg::Marker::ADD;
+    marker_usbl.lifetime.sec = 100000;
+    marker_usbl.lifetime.nanosec = 0;
+    marker_usbl.scale.x = 0.5;
+    marker_usbl.scale.y = 0.5;
+    marker_usbl.scale.z = 0.5;
+
+    marker_usbl.pose.position.x = usbl_from_map_xyz[0];
+    marker_usbl.pose.position.y = usbl_from_map_xyz[1];
+    marker_usbl.pose.position.z = usbl_from_map_xyz[2];
+
+    marker_usbl.pose.orientation.x = 0;
+    marker_usbl.pose.orientation.y = 0;
+    marker_usbl.pose.orientation.z = 0;
+    marker_usbl.pose.orientation.w = 1;
+    marker_usbl.color.a = 0.9f;
+    marker_usbl.color.r = 0.1f;
+    marker_usbl.color.g = 0.1f;
+    marker_usbl.color.b = 0.1f;
     marker_usbl_->publish(marker_usbl);
   }
   is_usbl_data_received = false;

@@ -89,6 +89,7 @@ class UroIns : public rclcpp::Node
     void draw_usbl();
     void draw_ship();
     void check_usbl_receive();
+    void check_ship_receive();
 
     std::shared_ptr<UroSubsonus> usbl_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcast_;
@@ -96,6 +97,7 @@ class UroIns : public rclcpp::Node
     rclcpp::TimerBase::SharedPtr timer_subsonus_;
     rclcpp::TimerBase::SharedPtr timer_publish_ship_marker_;
     rclcpp::TimerBase::SharedPtr timer_check_usbl_receive_;
+    rclcpp::TimerBase::SharedPtr timer_check_ship_receive_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_ship_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_usbl_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr usbl_posi_;  //6月OKIの暫定機能

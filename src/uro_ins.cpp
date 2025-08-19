@@ -92,6 +92,12 @@ UroIns::UroIns() : Node("ins_node")
     std::bind(&UroIns::check_usbl_receive, this)
   );
 
+  //subsonus電気的接続確認（指定時間Subsonus(surface)から受信していなければ未受信とする）
+  timer_check_ship_receive_ = this->create_wall_timer(
+    1s, 
+    std::bind(&UroIns::check_ship_receive, this)
+  );
+
   is_ship_data_received = false;
   is_usbl_data_received = false;
   is_map_tf_created = false;
