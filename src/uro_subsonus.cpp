@@ -113,38 +113,37 @@ UroSubsonus::UroSubsonus(std::shared_ptr<UroIns> ins) : ins_(ins) {}
 
 void UroSubsonus::receive_subsonus(){
   
-  /*
+  
   //プログラム確認用(実運用時コメントアウト)
-  static int i = 0;
   system_state_packet = {};
   subsonus_track_packet = {};
 
-  if (i < 1000){
-    system_state_packet.latitude        = (35 + i%10000 * 0.00000001) *  DEGREES_TO_RADIANS;
-    system_state_packet.longitude       = (139 + i%10000 * 0.00000001) * DEGREES_TO_RADIANS;
-    system_state_packet.height          = 0;
-    system_state_packet.orientation[2]  = (30 + i%10000 * 0.01) * DEGREES_TO_RADIANS;
-    ins_->set_ship_data(system_state_packet);
-  }
-  if (i%200 == 0){
-    subsonus_track_packet.observer_unix_time_seconds = i/50;
-    subsonus_track_packet.observer_microseconds = i/50;
-    subsonus_track_packet.ned_position[0] = i%10000 * 0.01;
-    subsonus_track_packet.ned_position[1] = - i%10000 * 0.02;
-    subsonus_track_packet.elevation       = (50 + i%10000 * 0.001) * DEGREES_TO_RADIANS;
-    subsonus_track_packet.latitude        = (35 + i%10000 * 0.00000002) * DEGREES_TO_RADIANS;
-    subsonus_track_packet.longitude       = (139 - i%10000 * 0.00000002) * DEGREES_TO_RADIANS;
+  //if (i < 1000){
+  system_state_packet.latitude        = (35 + count%10000 * 0.00000001) *  DEGREES_TO_RADIANS;
+  system_state_packet.longitude       = (139 + count%10000 * 0.00000001) * DEGREES_TO_RADIANS;
+  system_state_packet.height          = 0;
+  system_state_packet.orientation[2]  = (30 + count%10000 * 0.01) * DEGREES_TO_RADIANS;
+  ins_->set_ship_data(system_state_packet);
+  //}
+  if (count%200 == 0){
+    subsonus_track_packet.observer_unix_time_seconds = count/50;
+    subsonus_track_packet.observer_microseconds = count/50;
+    subsonus_track_packet.ned_position[0] = count%10000 * 0.01;
+    subsonus_track_packet.ned_position[1] = - count%10000 * 0.02;
+    subsonus_track_packet.elevation       = (50 + count%10000 * 0.001) * DEGREES_TO_RADIANS;
+    subsonus_track_packet.latitude        = (35 + count%10000 * 0.00000002) * DEGREES_TO_RADIANS;
+    subsonus_track_packet.longitude       = (139 - count%10000 * 0.00000002) * DEGREES_TO_RADIANS;
     subsonus_track_packet.height          = 0;
-    subsonus_track_packet.depth           = 10 + i%10000 * 0.001;
-    if ((i%400 ==0)){
+    subsonus_track_packet.depth           = 10 + count%10000 * 0.001;
+    if ((count%400 ==0)){
       ins_->set_usbl_data(subsonus_track_packet);
     }
   }
-  if (i > 1000000){
-    i = 0;
+  if (count > 1000000){
+    count = 0;
   }
-  i = i + 1;
-  */
+  count = count + 1;
+  
 
   FD_ZERO(&readfds);
   FD_SET(tcp_socket, &readfds);
@@ -206,6 +205,7 @@ void UroSubsonus::receive_subsonus(){
 }
 
 void UroSubsonus::initialize(){
+  count = 0;
   bytes_received = 0;
   t_wait.tv_sec = 0;
   t_wait.tv_usec = 100;

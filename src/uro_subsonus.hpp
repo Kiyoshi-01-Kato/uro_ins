@@ -88,6 +88,7 @@ class UroSubsonus
   #endif
 
     unsigned int bytes_received;
+    int count;
 
     struct timeval t_wait;
     fd_set readfds;

@@ -84,6 +84,7 @@ void UroIns::set_usbl_data(subsonus_track_packet_t subsea)
   subsea_old_ = subsea_;
   subsea_ = subsea;
   is_usbl_data_received = true;
+  printf("receive usbl data\n");
   process_usbl_data();
 }
 
@@ -118,6 +119,7 @@ void UroIns::evaluate_usbl_reliability()
   printf("elapsed_time = %f\n", elapsed_time);
   printf("subsea_.observer_unix_time_seconds = %d\n", subsea_.observer_unix_time_seconds);
   printf("subsea_old_.observer_unix_time_seconds = %d\n", subsea_old_.observer_unix_time_seconds);
+  printf("subsea_.latitude = %f\n", subsea_.latitude);
 
   if (elapsed_time * v_limit < diff_distance){
     usbl_reliability_level = 2;
@@ -196,7 +198,7 @@ void UroIns::draw_usbl()
   if (usbl_reliability_level == 4){
     marker_usbl.color.r = 0.0f;
     marker_usbl.color.g = 0.0f;
-    marker_usbl.color.b = 0.7f;
+    marker_usbl.color.b = 0.2f;
   }
   else if (usbl_reliability_level == 3){
     marker_usbl.color.r = 0.8f;
