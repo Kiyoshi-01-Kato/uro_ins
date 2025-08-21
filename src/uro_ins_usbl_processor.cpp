@@ -42,6 +42,7 @@
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "std_msgs/msg/int32_multi_array.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
+#include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -95,8 +96,8 @@ void UroIns::usbl_on_timer()
 
 void UroIns::process_usbl_data()
 {
-  printf("usbl_reliability_level = %d\n", usbl_reliability_level);
   evaluate_usbl_reliability();
+  printf("usbl_reliability_level = %d\n", usbl_reliability_level);
   /* 8月横須賀の暫定機能
   if (is_map_tf_created == true){
     broadcast_usbl_tf();
@@ -319,30 +320,58 @@ void UroIns::draw_ship()
   marker_ship.header.frame_id = "ship";
   marker_ship.ns = "marker_ship";
   marker_ship.id = 0;
-  marker_ship.type = visualization_msgs::msg::Marker::CUBE;
+  marker_ship.type = visualization_msgs::msg::Marker::LINE_STRIP;
   marker_ship.action = visualization_msgs::msg::Marker::ADD;
   marker_ship.lifetime.sec = 100000;
   marker_ship.lifetime.nanosec = 0;
-  marker_ship.scale.x = 18.8;
-  marker_ship.scale.y = 4.5;
-  marker_ship.scale.z = 1.6;
+  //marker_ship.scale.x = 18.8;
+  //marker_ship.scale.y = 4.5;
+  //marker_ship.scale.z = 1.6;
+  marker_ship.scale.x = 0.1;
   //surfaceから船の中心までの距離
-  float surface_to_ship_forward = - (18.8/2 - 4);
-  float surface_to_ship_right = 4.5/2;
-  marker_ship.pose.position.x = surface_to_ship_forward;
-  marker_ship.pose.position.y = - surface_to_ship_right;
-  marker_ship.pose.position.z = 0;
+  //float surface_to_ship_forward = - (18.8/2 - 4);
+  //float surface_to_ship_right = 4.5/2;
+  geometry_msgs::msg::Point point;
+  point.x = 0;
+  point.y = 0;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+  point.x = 4;
+  point.y = -4.5/2;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+  point.x = 0;
+  point.y = -4.5;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+  point.x = -14.8;
+  point.y = -4.5;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+  point.x = -14.8;
+  point.y = 0;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+  point.x = 0;
+  point.y = 0;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+
+
+  //marker_ship.pose.position.x = surface_to_ship_forward;
+  //marker_ship.pose.position.y = - surface_to_ship_right;
+  //marker_ship.pose.position.z = 0;
   //marker_ship.scale.x = 30.0;
   //marker_ship.scale.y = 13.0;
   //marker_ship.scale.z = 10.0;
   //marker_ship.pose.position.x = 4;
   //marker_ship.pose.position.y = 6.5;
   //marker_ship.pose.position.z = 0;
-  marker_ship.pose.orientation.x = 0;
-  marker_ship.pose.orientation.y = 0;
-  marker_ship.pose.orientation.z = 0;
-  marker_ship.pose.orientation.w = 1;
-  marker_ship.color.a = 0.2f;
+  //marker_ship.pose.orientation.x = 0;
+  //marker_ship.pose.orientation.y = 0;
+  //marker_ship.pose.orientation.z = 0;
+  //marker_ship.pose.orientation.w = 1;
+  marker_ship.color.a = 0.8f;
   /*
   if (is_ship_data_received == true){
     marker_ship.color.r = 0.3f;
@@ -376,10 +405,9 @@ void UroIns::draw_ship()
     marker_ship.color.b = 0.4f;
   }
   else{
-    marker_ship.color.a = 0.5f;
-    marker_ship.color.r = 0.0f;
-    marker_ship.color.g = 0.0f;
-    marker_ship.color.b = 0.0f;
+    marker_ship.color.r = 0.1f;
+    marker_ship.color.g = 0.1f;
+    marker_ship.color.b = 0.1f;
   }
   printf("draw:usbl_reliability_level = %d\n", usbl_reliability_level);
   marker_ship_->publish(marker_ship);
@@ -425,6 +453,8 @@ void UroIns::check_usbl_receive()
 
 void UroIns::check_ship_receive()
 {
+  pulish_usbl_data();
+
   if (is_ship_data_received == false){
     printf("black\n");
     usbl_reliability_level = 0;
@@ -459,7 +489,6 @@ void UroIns::check_ship_receive()
     */
   }
   is_ship_data_received = false;
-  pulish_usbl_data();
 }
 
 void UroIns::pulish_usbl_data()

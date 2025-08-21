@@ -101,7 +101,8 @@ UroIns::UroIns() : Node("ins_node")
   );
 
   //8月横須賀の暫定機能
-  rov_posi_ = this->create_subscription<uro_control_msgs::msg::RovControlData>("rov_posi_", 10, std::bind(&UroIns::get_rov_posi, this, _1));
+  rov_posi_ = this->create_subscription<uro_control_msgs::msg::RovControlData>(
+    "/rov_control_node/controller_state", 10, std::bind(&UroIns::get_rov_posi, this, _1));
 
   is_ship_data_received = false;
   is_usbl_data_received = false;

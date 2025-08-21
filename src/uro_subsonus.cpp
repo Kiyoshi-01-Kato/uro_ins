@@ -127,12 +127,12 @@ void UroSubsonus::receive_subsonus(){
     system_state_packet.orientation[2]  = (30 + count%10000 * 0.01) * DEGREES_TO_RADIANS;
     ins_->set_ship_data(system_state_packet);
   //}
-  if (count%200 == 0){
-    subsonus_track_packet.observer_unix_time_seconds = count/1000;
-    subsonus_track_packet.observer_microseconds = count/1000;
+  if (count%500 == 0){
+    subsonus_track_packet.observer_unix_time_seconds = count/2000;
+    subsonus_track_packet.observer_microseconds = count/2000;
     subsonus_track_packet.ned_position[0] = count%10000 * 0.001;
     subsonus_track_packet.ned_position[1] = - count%10000 * 0.002;
-    subsonus_track_packet.elevation       = (50 + count%10000 * 0.001) * DEGREES_TO_RADIANS;
+    subsonus_track_packet.elevation       = (70 + count%10000 * 0.001) * DEGREES_TO_RADIANS;
     subsonus_track_packet.latitude        = (35 + count%10000 * 0.00000002) * DEGREES_TO_RADIANS;
     subsonus_track_packet.longitude       = (139 - count%10000 * 0.00000002) * DEGREES_TO_RADIANS;
     subsonus_track_packet.height          = 0;
