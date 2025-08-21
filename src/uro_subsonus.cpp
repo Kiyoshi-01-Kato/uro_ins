@@ -115,27 +115,29 @@ void UroSubsonus::receive_subsonus(){
   
   
   //プログラム確認用(実運用時コメントアウト)
+  //以下有効時には、uro_ins.cppのinitialized()をコメントアウトすること
+  /*
   system_state_packet = {};
   subsonus_track_packet = {};
 
-  //if (i < 1000){
-  system_state_packet.latitude        = (35 + count%10000 * 0.00000001) *  DEGREES_TO_RADIANS;
-  system_state_packet.longitude       = (139 + count%10000 * 0.00000001) * DEGREES_TO_RADIANS;
-  system_state_packet.height          = 0;
-  system_state_packet.orientation[2]  = (30 + count%10000 * 0.01) * DEGREES_TO_RADIANS;
-  ins_->set_ship_data(system_state_packet);
+  //if (count < 1000){
+    system_state_packet.latitude        = (35 + count%10000 * 0.00000001) *  DEGREES_TO_RADIANS;
+    system_state_packet.longitude       = (139 + count%10000 * 0.00000001) * DEGREES_TO_RADIANS;
+    system_state_packet.height          = 0;
+    system_state_packet.orientation[2]  = (30 + count%10000 * 0.01) * DEGREES_TO_RADIANS;
+    ins_->set_ship_data(system_state_packet);
   //}
   if (count%200 == 0){
-    subsonus_track_packet.observer_unix_time_seconds = count/50;
-    subsonus_track_packet.observer_microseconds = count/50;
-    subsonus_track_packet.ned_position[0] = count%10000 * 0.01;
-    subsonus_track_packet.ned_position[1] = - count%10000 * 0.02;
+    subsonus_track_packet.observer_unix_time_seconds = count/1000;
+    subsonus_track_packet.observer_microseconds = count/1000;
+    subsonus_track_packet.ned_position[0] = count%10000 * 0.001;
+    subsonus_track_packet.ned_position[1] = - count%10000 * 0.002;
     subsonus_track_packet.elevation       = (50 + count%10000 * 0.001) * DEGREES_TO_RADIANS;
     subsonus_track_packet.latitude        = (35 + count%10000 * 0.00000002) * DEGREES_TO_RADIANS;
     subsonus_track_packet.longitude       = (139 - count%10000 * 0.00000002) * DEGREES_TO_RADIANS;
     subsonus_track_packet.height          = 0;
     subsonus_track_packet.depth           = 10 + count%10000 * 0.001;
-    if ((count%400 ==0)){
+    if ((count%1000 ==0)){
       ins_->set_usbl_data(subsonus_track_packet);
     }
   }
@@ -143,7 +145,8 @@ void UroSubsonus::receive_subsonus(){
     count = 0;
   }
   count = count + 1;
-  
+  return;
+  */
 
   FD_ZERO(&readfds);
   FD_SET(tcp_socket, &readfds);

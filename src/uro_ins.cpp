@@ -62,6 +62,7 @@
 #include "uro_ins.hpp"
 #include "uro_subsonus.hpp"
 
+using std::placeholders::_1;
 #define RADIANS_TO_DEGREES (180.0/M_PI)
 
 UroIns::UroIns() : Node("ins_node")
@@ -73,6 +74,7 @@ UroIns::UroIns() : Node("ins_node")
   marker_ship_ = this->create_publisher<visualization_msgs::msg::Marker>("marker_ship", 10);
   marker_usbl_ = this->create_publisher<visualization_msgs::msg::Marker>("marker_usbl", 10);
   usbl_posi_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("usbl_posi", 10);
+  ship_latlon_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("ship_latlon_", 10);
 
   //subsonusデータ受信(音響測位データ受診時にUSBL描画)
   timer_subsonus_ = this->create_wall_timer(
@@ -82,7 +84,7 @@ UroIns::UroIns() : Node("ins_node")
 
   //ship描画
   timer_publish_ship_marker_ = this->create_wall_timer(
-    200ms, 
+    1s, 
     std::bind(&UroIns::publish_ship_marker, this)
   );
 
@@ -97,6 +99,9 @@ UroIns::UroIns() : Node("ins_node")
     1s, 
     std::bind(&UroIns::check_ship_receive, this)
   );
+
+  //8月横須賀の暫定機能
+  rov_posi_ = this->create_subscription<uro_control_msgs::msg::RovControlData>("rov_posi_", 10, std::bind(&UroIns::get_rov_posi, this, _1));
 
   is_ship_data_received = false;
   is_usbl_data_received = false;
@@ -119,7 +124,7 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
   auto ins = std::make_shared<UroIns>();
   auto usbl = std::make_shared<UroSubsonus>(ins);
-  usbl->initialize();
+  usbl->initialize(); //プログラム確認用プログラム有効時にはコメントアウトする
   ins->set_subsonus(usbl);
   rclcpp::spin(ins);
   rclcpp::shutdown();

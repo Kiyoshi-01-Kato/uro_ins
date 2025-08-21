@@ -97,10 +97,13 @@ void UroIns::process_usbl_data()
 {
   printf("usbl_reliability_level = %d\n", usbl_reliability_level);
   evaluate_usbl_reliability();
+  /* 8月横須賀の暫定機能
   if (is_map_tf_created == true){
     broadcast_usbl_tf();
     draw_usbl();
   }
+  */
+  broadcast_ship_tf();
 }
 
 void UroIns::evaluate_usbl_reliability()
@@ -127,7 +130,7 @@ void UroIns::evaluate_usbl_reliability()
   }
 
   float elevation_deg = subsea_.elevation * RADIANS_TO_DEGREES;
-  if (elevation_deg > 55){
+  if (elevation_deg > 75){
     usbl_reliability_level = 3;
     return;
   }
@@ -136,11 +139,13 @@ void UroIns::evaluate_usbl_reliability()
 
 }
 
+/*8月横須賀の暫定
 void UroIns::broadcast_usbl_tf()
 {
   using namespace GeographicLib;
   LocalCartesian prij(map_origin_lat, map_origin_lon, map_origin_h);
   double x, y, z;
+  //この出力はxが東、yが北
   prij.Forward(subsea_.latitude * RADIANS_TO_DEGREES, subsea_.longitude * RADIANS_TO_DEGREES, subsea_.height, x, y, z);
   usbl_from_map_xyz[0] = y;
   usbl_from_map_xyz[1] = - x;
@@ -162,14 +167,10 @@ void UroIns::broadcast_usbl_tf()
   usbl_transform.transform.rotation.z = quat.z();
   usbl_transform.transform.rotation.w = quat.w();
   tf_broadcast_->sendTransform(usbl_transform);
-
-  auto usbl_posi = std_msgs::msg::Float64MultiArray();
-  usbl_posi.data.push_back(y);
-  usbl_posi.data.push_back(- x);
-  usbl_posi.data.push_back(subsea_.elevation * RADIANS_TO_DEGREES);
-  usbl_posi_->publish(usbl_posi);
 }
+*/
 
+/*8月横須賀の暫定
 void UroIns::draw_usbl()
 {
   auto now = this->get_clock()->now();
@@ -197,8 +198,8 @@ void UroIns::draw_usbl()
   marker_usbl.color.a = 0.7f;
   if (usbl_reliability_level == 4){
     marker_usbl.color.r = 0.0f;
-    marker_usbl.color.g = 0.0f;
-    marker_usbl.color.b = 0.2f;
+    marker_usbl.color.g = 0.6f;
+    marker_usbl.color.b = 1.0f;
   }
   else if (usbl_reliability_level == 3){
     marker_usbl.color.r = 0.8f;
@@ -216,9 +217,12 @@ void UroIns::draw_usbl()
   printf("draw:usbl_reliability_level = %d\n", usbl_reliability_level);
   marker_usbl_->publish(marker_usbl);
 }
+*/
 
 void UroIns::publish_ship_marker()
 {
+  //8月横須賀の暫定機能
+  /*
   if (is_map_tf_created == false){
     if (is_ship_data_received == false){
       return;
@@ -230,10 +234,16 @@ void UroIns::publish_ship_marker()
   }
   broadcast_ship_tf();
   draw_ship();
-  is_ship_data_received = false;
+  */
+
+  auto ship_latlon = std_msgs::msg::Float64MultiArray();
+  ship_latlon.data.push_back(surface_.latitude * RADIANS_TO_DEGREES);
+  ship_latlon.data.push_back(surface_.longitude * RADIANS_TO_DEGREES);
+  ship_latlon_->publish(ship_latlon);
+  draw_ship();
 }
 
-
+/* 8月横須賀の暫定
 void UroIns::broadcast_map_tf()
 {
   map_origin_lat = surface_.latitude * RADIANS_TO_DEGREES;
@@ -259,6 +269,7 @@ void UroIns::broadcast_map_tf()
   map_transform.transform.rotation.w = quat.w();
   static_tf_broadcast_->sendTransform(map_transform);
 }
+*/
 
 
 void UroIns::broadcast_ship_tf()
@@ -266,6 +277,7 @@ void UroIns::broadcast_ship_tf()
   using namespace GeographicLib;
   LocalCartesian prij(map_origin_lat, map_origin_lon, map_origin_h);
   double x, y, z;
+  //この出力はxが東、yが北
   prij.Forward(surface_.latitude * RADIANS_TO_DEGREES, surface_.longitude * RADIANS_TO_DEGREES, surface_.height, x, y, z);
 
   auto now = this->get_clock()->now();
@@ -273,10 +285,17 @@ void UroIns::broadcast_ship_tf()
   ship_transform.header.stamp = now;
   //ship_transform.header.stamp.sec = time.tv_sec;
   //ship_transform.header.stamp.nanosec = time.tv_nsec;
+  /* 8月横須賀の暫定機能
   ship_transform.header.frame_id = "map";
   ship_transform.child_frame_id = "ship";
   ship_transform.transform.translation.x = y;
   ship_transform.transform.translation.y = - x;
+  ship_transform.transform.translation.z = 0;
+  */
+  ship_transform.header.frame_id = "world";
+  ship_transform.child_frame_id = "ship";
+  ship_transform.transform.translation.x = rov_pose_.x - subsea_.ned_position[0];
+  ship_transform.transform.translation.y = rov_pose_.y - (- subsea_.ned_position[1]);
   ship_transform.transform.translation.z = 0;
   tf2::Quaternion quat;
   quat.setRPY(0.0, 0.0, - surface_.orientation[2]);
@@ -292,19 +311,26 @@ void UroIns::draw_ship()
 {
   auto now = this->get_clock()->now();
   visualization_msgs::msg::Marker marker_ship;
-  marker_ship.header.frame_id = "ship";
   marker_ship.header.stamp = now;
+  /*
+  marker_ship.header.frame_id = "ship";
+  marker_ship.ns = "marker_ship";
+  */
+  marker_ship.header.frame_id = "ship";
   marker_ship.ns = "marker_ship";
   marker_ship.id = 0;
   marker_ship.type = visualization_msgs::msg::Marker::CUBE;
   marker_ship.action = visualization_msgs::msg::Marker::ADD;
   marker_ship.lifetime.sec = 100000;
   marker_ship.lifetime.nanosec = 0;
-  marker_ship.scale.x = 3.0;
-  marker_ship.scale.y = 1.3;
-  marker_ship.scale.z = 1.0;
-  marker_ship.pose.position.x = 0;
-  marker_ship.pose.position.y = 0.65;
+  marker_ship.scale.x = 18.8;
+  marker_ship.scale.y = 4.5;
+  marker_ship.scale.z = 1.6;
+  //surfaceから船の中心までの距離
+  float surface_to_ship_forward = - (18.8/2 - 4);
+  float surface_to_ship_right = 4.5/2;
+  marker_ship.pose.position.x = surface_to_ship_forward;
+  marker_ship.pose.position.y = - surface_to_ship_right;
   marker_ship.pose.position.z = 0;
   //marker_ship.scale.x = 30.0;
   //marker_ship.scale.y = 13.0;
@@ -317,6 +343,7 @@ void UroIns::draw_ship()
   marker_ship.pose.orientation.z = 0;
   marker_ship.pose.orientation.w = 1;
   marker_ship.color.a = 0.2f;
+  /*
   if (is_ship_data_received == true){
     marker_ship.color.r = 0.3f;
     marker_ship.color.g = 0.3f;
@@ -327,6 +354,34 @@ void UroIns::draw_ship()
     marker_ship.color.g = 0.6f;
     marker_ship.color.b = 0.6f;
   }
+  */
+  if (usbl_reliability_level == 4){
+    marker_ship.color.r = 0.0f;
+    marker_ship.color.g = 0.6f;
+    marker_ship.color.b = 1.0f;
+  }
+  else if (usbl_reliability_level == 3){
+    marker_ship.color.r = 0.8f;
+    marker_ship.color.g = 0.4f;
+    marker_ship.color.b = 0.0f;
+  }
+  else if (usbl_reliability_level == 2){
+    marker_ship.color.r = 0.7f;
+    marker_ship.color.g = 0.7f;
+    marker_ship.color.b = 0.7f;
+  }
+  else if (usbl_reliability_level == 1){
+    marker_ship.color.r = 0.4f;
+    marker_ship.color.g = 0.4f;
+    marker_ship.color.b = 0.4f;
+  }
+  else{
+    marker_ship.color.a = 0.5f;
+    marker_ship.color.r = 0.0f;
+    marker_ship.color.g = 0.0f;
+    marker_ship.color.b = 0.0f;
+  }
+  printf("draw:usbl_reliability_level = %d\n", usbl_reliability_level);
   marker_ship_->publish(marker_ship);
 }
 
@@ -335,6 +390,7 @@ void UroIns::check_usbl_receive()
   if ((is_usbl_data_received == false)&&(is_ship_data_received == true)){
     printf("gray\n");
     usbl_reliability_level = 1;
+    /*
     auto now = this->get_clock()->now();
     visualization_msgs::msg::Marker marker_usbl;
     marker_usbl.header.frame_id = "map";
@@ -362,6 +418,7 @@ void UroIns::check_usbl_receive()
     marker_usbl.color.g = 0.6f;
     marker_usbl.color.b = 0.6f;
     marker_usbl_->publish(marker_usbl);
+    */
   }
   is_usbl_data_received = false;
 }
@@ -371,6 +428,7 @@ void UroIns::check_ship_receive()
   if (is_ship_data_received == false){
     printf("black\n");
     usbl_reliability_level = 0;
+    /*
     auto now = this->get_clock()->now();
     visualization_msgs::msg::Marker marker_usbl;
     marker_usbl.header.frame_id = "map";
@@ -398,7 +456,30 @@ void UroIns::check_ship_receive()
     marker_usbl.color.g = 0.1f;
     marker_usbl.color.b = 0.1f;
     marker_usbl_->publish(marker_usbl);
+    */
   }
-  is_usbl_data_received = false;
+  is_ship_data_received = false;
+  pulish_usbl_data();
+}
+
+void UroIns::pulish_usbl_data()
+{
+  auto usbl_posi = std_msgs::msg::Float64MultiArray();
+  usbl_posi.data.push_back(subsea_.latitude * RADIANS_TO_DEGREES);
+  usbl_posi.data.push_back(subsea_.longitude * RADIANS_TO_DEGREES);
+  usbl_posi.data.push_back(subsea_.ned_position[0]);
+  usbl_posi.data.push_back(subsea_.ned_position[1]);
+  usbl_posi.data.push_back(subsea_.ned_position[2]);
+  usbl_posi.data.push_back(usbl_reliability_level);
+  usbl_posi.data.push_back(subsea_.elevation * RADIANS_TO_DEGREES);
+  usbl_posi_->publish(usbl_posi);
+}
+
+  
+
+//8月横須賀の暫定機能
+void UroIns::get_rov_posi(const uro_control_msgs::msg::RovControlData::SharedPtr msg)
+{
+    rov_pose_ = msg->pose.position;
 }
 

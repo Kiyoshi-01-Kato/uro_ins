@@ -44,6 +44,7 @@
 #include "std_msgs/msg/int32_multi_array.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
+#include "uro_control_msgs/msg/rov_control_data.hpp"
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -90,6 +91,8 @@ class UroIns : public rclcpp::Node
     void draw_ship();
     void check_usbl_receive();
     void check_ship_receive();
+    void pulish_usbl_data();
+    void get_rov_posi(const uro_control_msgs::msg::RovControlData::SharedPtr msg);  //8月横須賀の暫定機能
 
     std::shared_ptr<UroSubsonus> usbl_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcast_;
@@ -101,10 +104,13 @@ class UroIns : public rclcpp::Node
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_ship_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_usbl_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr usbl_posi_;  //6月OKIの暫定機能
+    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr ship_latlon_;  
+    rclcpp::Subscription<uro_control_msgs::msg::RovControlData>::SharedPtr rov_posi_;  //8月横須賀の暫定機能
 
     subsonus_system_state_packet_t surface_;
     subsonus_track_packet_t subsea_;
     subsonus_track_packet_t subsea_old_;
+    geometry_msgs::msg::Point rov_pose_;  //8月横須賀の暫定機能
     float usbl_from_map_xyz[3];
     bool is_ship_data_received; //GNSS Compass(subsonus(surface))データ受信フラグ
     bool is_usbl_data_received; //音響測位データ受信フラグ
