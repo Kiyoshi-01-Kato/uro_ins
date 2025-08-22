@@ -84,7 +84,7 @@ UroIns::UroIns() : Node("ins_node")
 
   //ship描画
   timer_publish_ship_marker_ = this->create_wall_timer(
-    1s, 
+    500ms, 
     std::bind(&UroIns::publish_ship_marker, this)
   );
 

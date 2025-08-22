@@ -111,6 +111,7 @@ class UroIns : public rclcpp::Node
     subsonus_track_packet_t subsea_;
     subsonus_track_packet_t subsea_old_;
     geometry_msgs::msg::Point rov_pose_;  //8月横須賀の暫定機能
+    geometry_msgs::msg::Point rov_pose_new_;  //8月横須賀の暫定機能
     float usbl_from_map_xyz[3];
     bool is_ship_data_received; //GNSS Compass(subsonus(surface))データ受信フラグ
     bool is_usbl_data_received; //音響測位データ受信フラグ
