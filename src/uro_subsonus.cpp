@@ -116,20 +116,20 @@ void UroSubsonus::receive_subsonus(){
   
   //プログラム確認用(実運用時コメントアウト)
   //以下有効時には、uro_ins.cppのinitialized()をコメントアウトすること
-  /*
+  
   system_state_packet = {};
   subsonus_track_packet = {};
-
-  if (count < 1000){
+  /*
+  //if (count < 1000){
     system_state_packet.latitude        = (35 + count%10000 * 0.00000001) *  DEGREES_TO_RADIANS;
     system_state_packet.longitude       = (139 + count%10000 * 0.00000001) * DEGREES_TO_RADIANS;
     system_state_packet.height          = 0;
     system_state_packet.orientation[2]  = (30 + count%10000 * 0.01) * DEGREES_TO_RADIANS;
     ins_->set_ship_data(system_state_packet);
-  }
+  //}
   if (count%1000 == 0){
-    subsonus_track_packet.observer_unix_time_seconds = count/100;
-    subsonus_track_packet.observer_microseconds = count/100;
+    subsonus_track_packet.observer_unix_time_seconds = count/1000;
+    subsonus_track_packet.observer_microseconds = count/1000;
     subsonus_track_packet.ned_position[0] = count%10000 * 0.001;
     subsonus_track_packet.ned_position[1] = - count%10000 * 0.002;
     subsonus_track_packet.elevation       = (70 + count%10000 * 0.001) * DEGREES_TO_RADIANS;

@@ -409,9 +409,9 @@ void UroIns::draw_ship()
     marker_ship.color.b = 0.4f;
   }
   else{
-    marker_ship.color.r = 0.1f;
-    marker_ship.color.g = 0.1f;
-    marker_ship.color.b = 0.1f;
+    marker_ship.color.r = 0.0f;
+    marker_ship.color.g = 0.0f;
+    marker_ship.color.b = 0.0f;
   }
   printf("draw:usbl_reliability_level = %d\n", usbl_reliability_level);
   printf("draw_usbl\n");
