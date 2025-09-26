@@ -81,24 +81,20 @@ UroIns::UroIns() : Node("ins_node")
   );
 
   //ship描画
-  timer_publish_ship_marker_ = this->create_wall_timer(
+  timer_publish_marker_ = this->create_wall_timer(
     200ms, 
-    std::bind(&UroIns::publish_ship_marker, this)
-  );
-
-  //音響測位データ受信確認（指定時間受信していなければ未受信とする）
-  timer_check_usbl_receive_ = this->create_wall_timer(
-    6s, 
-    std::bind(&UroIns::check_usbl_receive, this)
+    std::bind(&UroIns::publish_marker, this)
   );
 
   is_ship_data_received = false;
   is_usbl_data_received = false;
-  is_map_tf_created = false;
+  is_map_latlon_loaded = false;
   usbl_reliability_level = 0;
   map_origin_lat = 0.0;
   map_origin_lon = 0.0;
   map_origin_h = 0.0;
+  ship_marker_count = 0;
+  usbl_marker_count = 0;
   surface_ = {};
   subsea_ = {};
   subsea_old_ = {};
@@ -114,6 +110,7 @@ int main(int argc, char ** argv)
   auto ins = std::make_shared<UroIns>();
   auto usbl = std::make_shared<UroSubsonus>(ins);
   usbl->initialize();
+  ins->initialize();
   ins->set_subsonus(usbl);
   rclcpp::spin(ins);
   rclcpp::shutdown();

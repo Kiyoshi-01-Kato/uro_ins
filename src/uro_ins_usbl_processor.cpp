@@ -68,6 +68,13 @@
 #define RADIANS_TO_DEGREES (180.0/M_PI)
 #define DEGREES_TO_RADIANS (M_PI/180.0)
 
+void UroIns::initialize()
+{
+  tf_init("map");
+  tf_init("ship");
+  tf_init("odom");
+}
+
 void UroIns::set_subsonus(std::shared_ptr<UroSubsonus> usbl)
 {
   usbl_ = usbl;
@@ -84,7 +91,6 @@ void UroIns::set_usbl_data(subsonus_track_packet_t subsea)
   subsea_old_ = subsea_;
   subsea_ = subsea;
   is_usbl_data_received = true;
-  process_usbl_data();
 }
 
 void UroIns::usbl_on_timer()
@@ -92,18 +98,85 @@ void UroIns::usbl_on_timer()
   usbl_->receive_subsonus();
 }
 
-void UroIns::process_usbl_data()
+
+void UroIns::tf_init(std::string frame_name)
 {
-  printf("usbl_reliability_level = %d\n", usbl_reliability_level);
+  geometry_msgs::msg::TransformStamped init_transform;
+  auto now = this->get_clock()->now();
+  init_transform.header.stamp = now;
+
+  init_transform.transform.translation.x = 0;
+  init_transform.transform.translation.y = 0;
+  init_transform.transform.translation.z = 0;
+  tf2::Quaternion quat;
+  quat.setRPY(0.0, 0.0, 0.0);
+  init_transform.transform.rotation.x = quat.x();
+  init_transform.transform.rotation.y = quat.y();
+  init_transform.transform.rotation.z = quat.z();
+  init_transform.transform.rotation.w = quat.w();
+
+  if (frame_name == "map"){
+    init_transform.header.frame_id = "world";
+    init_transform.child_frame_id = "map";
+    static_tf_broadcast_->sendTransform(init_transform);
+  }else if (frame_name == "ship"){
+    init_transform.header.frame_id = "map";
+    init_transform.child_frame_id = "ship";
+    tf_broadcast_->sendTransform(init_transform);
+  }else if (frame_name == "odom"){
+    init_transform.header.frame_id = "map";
+    init_transform.child_frame_id = "odom";
+    tf_broadcast_->sendTransform(init_transform);
+  }else{
+    //何もしない
+  }
+
+}
+
+void UroIns::publish_marker()
+{
   evaluate_usbl_reliability();
-  if (is_map_tf_created == true){
+  if (is_map_latlon_loaded == false){
+    if (is_ship_data_received == false){
+      return;
+    }
+    else{
+      load_map_latlon();
+      is_map_latlon_loaded = true;
+    }
+  }else{
+    broadcast_ship_tf();
+    draw_ship();
     broadcast_usbl_tf();
     draw_usbl();
   }
+  
+  is_ship_data_received = false;
+  is_usbl_data_received = false;
 }
 
 void UroIns::evaluate_usbl_reliability()
 {
+  if (is_ship_data_received ==true){
+    ship_marker_count = 0;
+  }else{
+    ship_marker_count++;
+  }
+  if (ship_marker_count >= 5){
+    usbl_reliability_level = 0;
+    return;
+  }
+
+  if (is_usbl_data_received ==true){
+    usbl_marker_count = 0;
+  }else{
+    usbl_marker_count++;
+  }
+  if (usbl_marker_count >= 30){
+    usbl_reliability_level = 1;
+    return;
+  }
+
   int elapsed_sec = subsea_.observer_unix_time_seconds - subsea_old_.observer_unix_time_seconds;
   int elapsed_us = subsea_.observer_microseconds - subsea_old_.observer_microseconds;
   float elapsed_time = elapsed_sec + elapsed_us * 0.001 * 0.001;
@@ -114,24 +187,110 @@ void UroIns::evaluate_usbl_reliability()
 
   float v_limit = 1.54332;  //3knot
 
-  printf("subsea_.ned_position[0] = %f\n", subsea_.ned_position[0]);
-  printf("elapsed_time = %f\n", elapsed_time);
-  printf("subsea_.observer_unix_time_seconds = %d\n", subsea_.observer_unix_time_seconds);
-  printf("subsea_old_.observer_unix_time_seconds = %d\n", subsea_old_.observer_unix_time_seconds);
-
   if (elapsed_time * v_limit < diff_distance){
-    usbl_reliability_level = 1;
-    return;
-  }
-
-  float elevation_deg = subsea_.elevation * RADIANS_TO_DEGREES;
-  if (elevation_deg > 55){
     usbl_reliability_level = 2;
     return;
   }
 
-  usbl_reliability_level = 3;
+  float elevation_deg = subsea_.elevation * RADIANS_TO_DEGREES;
+  if (elevation_deg > 75){
+    usbl_reliability_level = 3;
+    return;
+  }
 
+  usbl_reliability_level = 4;
+
+}
+
+void UroIns::load_map_latlon()
+{
+  map_origin_lat = surface_.latitude * RADIANS_TO_DEGREES;
+  map_origin_lon = surface_.longitude * RADIANS_TO_DEGREES;
+  map_origin_h = surface_.height;
+}
+
+
+void UroIns::broadcast_ship_tf()
+{
+  using namespace GeographicLib;
+  LocalCartesian prij(map_origin_lat, map_origin_lon, map_origin_h);
+  double x, y, z;
+  prij.Forward(surface_.latitude * RADIANS_TO_DEGREES, surface_.longitude * RADIANS_TO_DEGREES, surface_.height, x, y, z);
+
+  auto now = this->get_clock()->now();
+  geometry_msgs::msg::TransformStamped ship_transform;
+  ship_transform.header.stamp = now;
+  //ship_transform.header.stamp.sec = time.tv_sec;
+  //ship_transform.header.stamp.nanosec = time.tv_nsec;
+  ship_transform.header.frame_id = "map";
+  ship_transform.child_frame_id = "ship";
+  ship_transform.transform.translation.x = y;
+  ship_transform.transform.translation.y = - x;
+  ship_transform.transform.translation.z = 0;
+  tf2::Quaternion quat;
+  quat.setRPY(0.0, 0.0, - surface_.orientation[2]);
+  ship_transform.transform.rotation.x = quat.x();
+  ship_transform.transform.rotation.y = quat.y();
+  ship_transform.transform.rotation.z = quat.z();
+  ship_transform.transform.rotation.w = quat.w();
+  tf_broadcast_->sendTransform(ship_transform);
+}
+
+
+void UroIns::draw_ship()
+{
+  auto now = this->get_clock()->now();
+  visualization_msgs::msg::Marker marker_ship;
+  marker_ship.header.frame_id = "ship";
+  marker_ship.header.stamp = now;
+  marker_ship.ns = "marker_ship";
+  marker_ship.id = 0;
+  marker_ship.type = visualization_msgs::msg::Marker::LINE_STRIP;
+  marker_ship.action = visualization_msgs::msg::Marker::ADD;
+  marker_ship.lifetime.sec = 100000;
+  marker_ship.lifetime.nanosec = 0;
+
+  marker_ship.scale.x = 0.1;
+  float length = 23.36;
+  float width = 5.4;
+  geometry_msgs::msg::Point point;
+  point.x = 0;
+  point.y = 0;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+  point.x = width;
+  point.y = -width/2;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+  point.x = 0;
+  point.y = -width;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+  point.x = -length;
+  point.y = -width;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+  point.x = -length;
+  point.y = 0;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+  point.x = 0;
+  point.y = 0;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+
+  marker_ship.color.a = 0.8f;
+  if (usbl_reliability_level >= 1){
+    marker_ship.color.r = 0.3f;
+    marker_ship.color.g = 0.3f;
+    marker_ship.color.b = 1.0f;
+  }
+  else{
+    marker_ship.color.r = 0.0f;
+    marker_ship.color.g = 0.0f;
+    marker_ship.color.b = 0.0f;
+  }
+  marker_ship_->publish(marker_ship);
 }
 
 void UroIns::broadcast_usbl_tf()
@@ -176,13 +335,12 @@ void UroIns::draw_usbl()
   marker_usbl.header.stamp = now;
   marker_usbl.ns = "marker_usbl";
   marker_usbl.id = 0;
-  marker_usbl.type = visualization_msgs::msg::Marker::SPHERE;
   marker_usbl.action = visualization_msgs::msg::Marker::ADD;
   marker_usbl.lifetime.sec = 100000;
   marker_usbl.lifetime.nanosec = 0;
-  marker_usbl.scale.x = 0.5;
-  marker_usbl.scale.y = 0.5;
-  marker_usbl.scale.z = 0.5;
+  marker_usbl.scale.x = 1.0;
+  marker_usbl.scale.y = 1.0;
+  marker_usbl.scale.z = 1.0;
 
   marker_usbl.pose.position.x = usbl_from_map_xyz[0];
   marker_usbl.pose.position.y = usbl_from_map_xyz[1];
@@ -193,178 +351,40 @@ void UroIns::draw_usbl()
   marker_usbl.pose.orientation.z = 0;
   marker_usbl.pose.orientation.w = 1;
   marker_usbl.color.a = 0.7f;
-  if (usbl_reliability_level == 3){
+  if (usbl_reliability_level == 4){
+    marker_usbl.type = visualization_msgs::msg::Marker::SPHERE;
     marker_usbl.color.r = 0.0f;
     marker_usbl.color.g = 0.0f;
     marker_usbl.color.b = 0.7f;
   }
-  else if (usbl_reliability_level == 2){
+  else if (usbl_reliability_level == 3){
+    marker_usbl.type = visualization_msgs::msg::Marker::SPHERE;
     marker_usbl.color.r = 0.8f;
     marker_usbl.color.g = 0.4f;
     marker_usbl.color.b = 0.0f;
   }
+  else if (usbl_reliability_level == 2){
+    marker_usbl.type = visualization_msgs::msg::Marker::SPHERE;
+    marker_usbl.color.r = 0.5f;
+    marker_usbl.color.g = 0.5f;
+    marker_usbl.color.b = 0.5f;
+  }
   else if (usbl_reliability_level == 1){
-    marker_usbl.color.r = 1.0f;
+    marker_usbl.type = visualization_msgs::msg::Marker::CUBE;
+    marker_usbl.color.r = 0.5f;
+    marker_usbl.color.g = 0.5f;
+    marker_usbl.color.b = 0.5f;
+  }
+  else if (usbl_reliability_level == 0){
+    marker_usbl.type = visualization_msgs::msg::Marker::CUBE;
+    marker_usbl.color.r = 0.0f;
     marker_usbl.color.g = 0.0f;
     marker_usbl.color.b = 0.0f;
   }
   else{
     return;
   }
-  printf("draw:usbl_reliability_level = %d\n", usbl_reliability_level);
+
   marker_usbl_->publish(marker_usbl);
-}
-
-void UroIns::publish_ship_marker()
-{
-  if (is_map_tf_created == false){
-    if (is_ship_data_received == false){
-      return;
-    }
-    else{
-      broadcast_map_tf();
-      is_map_tf_created = true;
-    }
-  }
-  broadcast_ship_tf();
-  //std::this_thread::sleep_for(std::chrono::milliseconds(400));
-  draw_ship();
-  is_ship_data_received = false;
-}
-
-
-void UroIns::broadcast_map_tf()
-{
-  map_origin_lat = surface_.latitude * RADIANS_TO_DEGREES;
-  map_origin_lon = surface_.longitude * RADIANS_TO_DEGREES;
-  map_origin_h = surface_.height;
-
-  auto now = this->get_clock()->now();
-  
-  //struct timespec time;
-  //clock_gettime(CLOCK_REALTIME, &time);
-
-  geometry_msgs::msg::TransformStamped map_transform;
-  map_transform.header.stamp = now;
-  //map_transform.header.stamp.sec = time.tv_sec;
-  //map_transform.header.stamp.nanosec = time.tv_nsec;
-  map_transform.header.frame_id = "world";
-  map_transform.child_frame_id = "map";
-  map_transform.transform.translation.x = 0;
-  map_transform.transform.translation.y = 0;
-  map_transform.transform.translation.z = 0;
-  tf2::Quaternion quat;
-  quat.setRPY(0.0, 0.0, 0.0);
-  map_transform.transform.rotation.x = quat.x();
-  map_transform.transform.rotation.y = quat.y();
-  map_transform.transform.rotation.z = quat.z();
-  map_transform.transform.rotation.w = quat.w();
-  static_tf_broadcast_->sendTransform(map_transform);
-}
-
-
-void UroIns::broadcast_ship_tf()
-{
-  using namespace GeographicLib;
-  LocalCartesian prij(map_origin_lat, map_origin_lon, map_origin_h);
-  double x, y, z;
-  prij.Forward(surface_.latitude * RADIANS_TO_DEGREES, surface_.longitude * RADIANS_TO_DEGREES, surface_.height, x, y, z);
-
-  auto now = this->get_clock()->now();
-  geometry_msgs::msg::TransformStamped ship_transform;
-  ship_transform.header.stamp = now;
-  //ship_transform.header.stamp.sec = time.tv_sec;
-  //ship_transform.header.stamp.nanosec = time.tv_nsec;
-  ship_transform.header.frame_id = "map";
-  ship_transform.child_frame_id = "ship";
-  ship_transform.transform.translation.x = y;
-  ship_transform.transform.translation.y = - x;
-  ship_transform.transform.translation.z = 0;
-  tf2::Quaternion quat;
-  quat.setRPY(0.0, 0.0, - surface_.orientation[2]);
-  ship_transform.transform.rotation.x = quat.x();
-  ship_transform.transform.rotation.y = quat.y();
-  ship_transform.transform.rotation.z = quat.z();
-  ship_transform.transform.rotation.w = quat.w();
-  tf_broadcast_->sendTransform(ship_transform);
-}
-
-
-void UroIns::draw_ship()
-{
-  auto now = this->get_clock()->now();
-  visualization_msgs::msg::Marker marker_ship;
-  marker_ship.header.frame_id = "ship";
-  marker_ship.header.stamp = now;
-  marker_ship.ns = "marker_ship";
-  marker_ship.id = 0;
-  marker_ship.type = visualization_msgs::msg::Marker::CUBE;
-  marker_ship.action = visualization_msgs::msg::Marker::ADD;
-  marker_ship.lifetime.sec = 100000;
-  marker_ship.lifetime.nanosec = 0;
-  marker_ship.scale.x = 3.0;
-  marker_ship.scale.y = 1.3;
-  marker_ship.scale.z = 1.0;
-  marker_ship.pose.position.x = 0;
-  marker_ship.pose.position.y = 0.65;
-  marker_ship.pose.position.z = 0;
-  //marker_ship.scale.x = 30.0;
-  //marker_ship.scale.y = 13.0;
-  //marker_ship.scale.z = 10.0;
-  //marker_ship.pose.position.x = 4;
-  //marker_ship.pose.position.y = 6.5;
-  //marker_ship.pose.position.z = 0;
-  marker_ship.pose.orientation.x = 0;
-  marker_ship.pose.orientation.y = 0;
-  marker_ship.pose.orientation.z = 0;
-  marker_ship.pose.orientation.w = 1;
-  marker_ship.color.a = 0.2f;
-  if (is_ship_data_received == true){
-    marker_ship.color.r = 0.3f;
-    marker_ship.color.g = 0.3f;
-    marker_ship.color.b = 1.0f;
-  }
-  else{
-    marker_ship.color.r = 0.6f;
-    marker_ship.color.g = 0.6f;
-    marker_ship.color.b = 0.6f;
-  }
-  marker_ship_->publish(marker_ship);
-}
-
-void UroIns::check_usbl_receive()
-{
-  if (is_usbl_data_received == false){
-    printf("gray\n");
-    usbl_reliability_level = 0;
-    auto now = this->get_clock()->now();
-    visualization_msgs::msg::Marker marker_usbl;
-    marker_usbl.header.frame_id = "map";
-    marker_usbl.header.stamp = now;
-    marker_usbl.ns = "marker_usbl";
-    marker_usbl.id = 0;
-    marker_usbl.type = visualization_msgs::msg::Marker::SPHERE;
-    marker_usbl.action = visualization_msgs::msg::Marker::ADD;
-    marker_usbl.lifetime.sec = 100000;
-    marker_usbl.lifetime.nanosec = 0;
-    marker_usbl.scale.x = 0.5;
-    marker_usbl.scale.y = 0.5;
-    marker_usbl.scale.z = 0.5;
-
-    marker_usbl.pose.position.x = usbl_from_map_xyz[0];
-    marker_usbl.pose.position.y = usbl_from_map_xyz[1];
-    marker_usbl.pose.position.z = usbl_from_map_xyz[2];
-
-    marker_usbl.pose.orientation.x = 0;
-    marker_usbl.pose.orientation.y = 0;
-    marker_usbl.pose.orientation.z = 0;
-    marker_usbl.pose.orientation.w = 1;
-    marker_usbl.color.a = 0.4f;
-    marker_usbl.color.r = 0.6f;
-    marker_usbl.color.g = 0.6f;
-    marker_usbl.color.b = 0.6f;
-    marker_usbl_->publish(marker_usbl);
-  }
-  is_usbl_data_received = false;
 }
 

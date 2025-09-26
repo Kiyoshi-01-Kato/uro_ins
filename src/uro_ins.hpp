@@ -73,29 +73,28 @@ class UroIns : public rclcpp::Node
 {
   public:
     UroIns();
+    void initialize();
     void set_subsonus(std::shared_ptr<UroSubsonus> usbl);
     void set_ship_data(subsonus_system_state_packet_t surface);
     void set_usbl_data(subsonus_track_packet_t subsea);
 
   private:
+    void tf_init(std::string frame_name);
     void usbl_on_timer();
 
-    void process_usbl_data();
     void evaluate_usbl_reliability();
     void broadcast_usbl_tf();
-    void publish_ship_marker();
-    void broadcast_map_tf();
+    void publish_marker();
+    void load_map_latlon();
     void broadcast_ship_tf();
     void draw_usbl();
     void draw_ship();
-    void check_usbl_receive();
 
     std::shared_ptr<UroSubsonus> usbl_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcast_;
     std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcast_;
     rclcpp::TimerBase::SharedPtr timer_subsonus_;
-    rclcpp::TimerBase::SharedPtr timer_publish_ship_marker_;
-    rclcpp::TimerBase::SharedPtr timer_check_usbl_receive_;
+    rclcpp::TimerBase::SharedPtr timer_publish_marker_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_ship_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_usbl_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr usbl_posi_;  //6月OKIの暫定機能
@@ -106,11 +105,13 @@ class UroIns : public rclcpp::Node
     float usbl_from_map_xyz[3];
     bool is_ship_data_received; //GNSS Compass(subsonus(surface))データ受信フラグ
     bool is_usbl_data_received; //音響測位データ受信フラグ
-    bool is_map_tf_created;     //mapフレーム作成フラグ
+    bool is_map_latlon_loaded;  //mapフレームの緯度経度取得フラグ
     int usbl_reliability_level; //０：未受信、１：速度3knot以上、２：傘の範囲外、３：正常
     float map_origin_lat;       //map原点の緯度
     float map_origin_lon;       //map原点の経度
     float map_origin_h;         //map原点の高度
+    int ship_marker_count;      //前回shipマーカー描画からのカウント
+    int usbl_marker_count;      //前回usblマーカー描画からのカウント
 };
 
 #endif //URO_INS_HPP
