@@ -1,0 +1,3 @@
+geographic_msgs/GeoPath gnss_point_marker
+---
+bool success
