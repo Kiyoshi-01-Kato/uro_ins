@@ -33,6 +33,10 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(GeographicLib REQUIRED)
+find_package(geographic_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(interfaces REQUIRED)
+find_package(uro_ins_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -49,10 +53,12 @@ add_library(my_c_code STATIC
   src/SubsonusSDK_0/C/lib/subsonus_packets.c
 )
 
+
 add_executable(uro_ins ${SOURCES})
 target_include_directories(uro_ins PUBLIC
   src
 )
+
 
 target_link_libraries(uro_ins
   my_c_code
@@ -66,6 +72,9 @@ tf2_ros
 tf2_msgs
 geometry_msgs
 visualization_msgs
+geographic_msgs
+interfaces
+uro_ins_msgs
 )
 
 install(TARGETS

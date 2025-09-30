@@ -43,6 +43,7 @@
 #include "std_msgs/msg/int32_multi_array.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
+#include "interfaces/msg/bottom_track.hpp"
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <visualization_msgs/msg/marker.hpp>
@@ -153,6 +154,16 @@ void UroIns::publish_marker()
   
   is_ship_data_received = false;
   is_usbl_data_received = false;
+
+  //対地速度が一度でも取得したらtrue
+  if ((bottom_track_fom[0] < 1) && (bottom_track_fom[1] < 1)){
+    bt_dvl_received = true;
+  }
+  //対地速度を一度も取得していない場合
+  if (bt_dvl_received = false){
+    broadcast_odom_tf("ship");
+  }
+  
 }
 
 void UroIns::evaluate_usbl_reliability()
@@ -234,6 +245,7 @@ void UroIns::broadcast_ship_tf()
   ship_transform.transform.rotation.z = quat.z();
   ship_transform.transform.rotation.w = quat.w();
   tf_broadcast_->sendTransform(ship_transform);
+  ship_tf = ship_transform;
 }
 
 
@@ -313,7 +325,9 @@ void UroIns::broadcast_usbl_tf()
   usbl_transform.transform.translation.y = usbl_from_map_xyz[1];
   usbl_transform.transform.translation.z = usbl_from_map_xyz[2];
   tf2::Quaternion quat;
-  quat.setRPY(0.0, 0.0, 0.0);
+  //tfを同じ位置で更新するため、90degごとに回転
+  float spin_90 = (M_PI / 2) * usbl_marker_count;
+  quat.setRPY(0.0, 0.0, spin_90);
   usbl_transform.transform.rotation.x = quat.x();
   usbl_transform.transform.rotation.y = quat.y();
   usbl_transform.transform.rotation.z = quat.z();
@@ -388,3 +402,38 @@ void UroIns::draw_usbl()
   marker_usbl_->publish(marker_usbl);
 }
 
+void UroIns::broadcast_odom_tf(std::string str)
+{
+  geometry_msgs::msg::TransformStamped odom_transform = ship_tf;
+  auto now = this->get_clock()->now();
+  odom_transform.header.stamp = now;
+  odom_transform.child_frame_id = "odom";
+  if (str == "usbl"){
+
+  }
+  tf_broadcast_->sendTransform(odom_transform);
+}
+
+void UroIns::get_bottom_track(const interfaces::msg::BottomTrack::SharedPtr msg)
+{
+    bottom_track_fom[0] = msg->fom_x;
+    bottom_track_fom[1] = msg->fom_y;
+    bottom_track_fom[2] = msg->fom_z;
+}
+/*
+void UroIns::get_usbl_position(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+          std::shared_ptr<std_srvs::srv::Trigger::Response>      response)
+{
+  //対地速度が一度でも取得したらtrue
+  if ((bottom_track_fom[0] < 1) && (bottom_track_fom[1] < 1)){
+    if (usbl_reliability_level >= 3){
+      broadcast_odom_tf("usbl");
+    }
+  }
+}
+*/
+void UroIns::set_gnss_point(const std::shared_ptr<uro_ins_msgs::srv::SetGnssPoint::Request> request,
+          std::shared_ptr<uro_ins_msgs::srv::SetGnssPoint::Response>      response)
+{
+  response->success = true;
+}

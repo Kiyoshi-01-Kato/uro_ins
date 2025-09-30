@@ -19,7 +19,9 @@
   <depend>geometry_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>libgeographic-dev</depend>
-
+  <depend>geographic_msgs</depend>
+  <depend>interfaces</depend>
+  <depend>uro_ins_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
