@@ -71,9 +71,9 @@ UroIns::UroIns() : Node("ins_node")
   //subsonus_publisher_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("subsonus_data", 10);
   tf_broadcast_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
   static_tf_broadcast_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
-  marker_ship_ = this->create_publisher<visualization_msgs::msg::Marker>("marker_ship", 10);
-  marker_usbl_ = this->create_publisher<visualization_msgs::msg::Marker>("marker_usbl", 10);
-  usbl_posi_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("usbl_posi", 10);
+  marker_ship_ = this->create_publisher<visualization_msgs::msg::Marker>("/ins_node/marker_ship", 10);
+  marker_usbl_ = this->create_publisher<visualization_msgs::msg::Marker>("/ins_node/marker_usbl", 10);
+  usbl_posi_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("/ins_node/usbl_posi", 10);
   //Nucleusの対地速度パケット取得
   bottom_track_ = this->create_subscription<interfaces::msg::BottomTrack>(
     "/nucleus_node/bottom_track_packets", 10, std::bind(&UroIns::get_bottom_track, this, _1));

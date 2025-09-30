@@ -311,8 +311,8 @@ void UroIns::broadcast_usbl_tf()
   LocalCartesian prij(map_origin_lat, map_origin_lon, map_origin_h);
   double x, y, z;
   prij.Forward(subsea_.latitude * RADIANS_TO_DEGREES, subsea_.longitude * RADIANS_TO_DEGREES, subsea_.height, x, y, z);
-  usbl_from_map_xyz[0] = y;
-  usbl_from_map_xyz[1] = - x;
+  usbl_from_map_xyz[0] = x;
+  usbl_from_map_xyz[1] = - y;
   usbl_from_map_xyz[2] = - subsea_.depth;
   auto now = this->get_clock()->now();
   geometry_msgs::msg::TransformStamped usbl_transform;
@@ -335,8 +335,11 @@ void UroIns::broadcast_usbl_tf()
   tf_broadcast_->sendTransform(usbl_transform);
 
   auto usbl_posi = std_msgs::msg::Float64MultiArray();
+  usbl_posi.data.push_back(subsea_.latitude * RADIANS_TO_DEGREES);
+  usbl_posi.data.push_back(subsea_.longitude * RADIANS_TO_DEGREES);
+  usbl_posi.data.push_back(x);
   usbl_posi.data.push_back(y);
-  usbl_posi.data.push_back(- x);
+  usbl_posi.data.push_back(subsea_.depth);
   usbl_posi.data.push_back(subsea_.elevation * RADIANS_TO_DEGREES);
   usbl_posi_->publish(usbl_posi);
 }
