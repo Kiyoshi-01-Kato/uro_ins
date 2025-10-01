@@ -113,7 +113,7 @@ UroSubsonus::UroSubsonus(std::shared_ptr<UroIns> ins) : ins_(ins) {}
 
 void UroSubsonus::receive_subsonus(){
   
-  
+  /*
   //プログラム確認用(実運用時コメントアウト)
   static int i = 0;
   system_state_packet = {};
@@ -142,7 +142,7 @@ void UroSubsonus::receive_subsonus(){
     i = 0;
   }
   i = i + 1;
-  
+  */
 
   FD_ZERO(&readfds);
   FD_SET(tcp_socket, &readfds);
