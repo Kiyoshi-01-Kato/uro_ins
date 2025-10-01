@@ -48,8 +48,8 @@ UroIns::UroIns() : Node("ins_node")
   marker_ship_ = this->create_publisher<visualization_msgs::msg::Marker>("/ins_node/marker_ship", 10);
   marker_usbl_ = this->create_publisher<visualization_msgs::msg::Marker>("/ins_node/marker_usbl", 10);
   usbl_posi_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("/ins_node/usbl_posi", 10);
-  from_ship_to_rov_dvl_ = this->create_publisher<std_msgs::msg::Float64>("/ins_node/horizontal_distance_ship_rov_dvl", 10);
-  from_ship_to_rov_usbl_ = this->create_publisher<std_msgs::msg::Float64>("/ins_node/horizontal_distance_ship_rov_usbl", 10);
+  from_ship_to_rov_dvl_ = this->create_publisher<std_msgs::msg::Float32>("/ins_node/horizontal_distance_ship_rov_dvl", 10);
+  from_ship_to_rov_usbl_ = this->create_publisher<std_msgs::msg::Float32>("/ins_node/horizontal_distance_ship_rov_usbl", 10);
 
   //Nucleusのパケット取得
   bottom_track_ = this->create_subscription<interfaces::msg::BottomTrack>(
@@ -105,7 +105,7 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
   auto ins = std::make_shared<UroIns>();
   auto usbl = std::make_shared<UroSubsonus>(ins);
-  usbl->initialize();
+  //usbl->initialize();
   ins->initialize();
   ins->set_subsonus(usbl);
   rclcpp::spin(ins);

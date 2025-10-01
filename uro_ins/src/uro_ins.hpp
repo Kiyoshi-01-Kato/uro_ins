@@ -40,7 +40,7 @@
 #include <sys/time.h>
 #include <memory>
 
-#include "std_msgs/msg/float64.hpp"
+#include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "std_msgs/msg/int32_multi_array.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
@@ -112,8 +112,8 @@ class UroIns : public rclcpp::Node
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_ship_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_usbl_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr usbl_posi_;
-    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr from_ship_to_rov_dvl_;
-    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr from_ship_to_rov_usbl_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr from_ship_to_rov_dvl_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr from_ship_to_rov_usbl_;
     rclcpp::Subscription<interfaces::msg::BottomTrack>::SharedPtr bottom_track_;
     rclcpp::Subscription<interfaces::msg::INS>::SharedPtr dvl_posi_; 
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr usbl_position_;

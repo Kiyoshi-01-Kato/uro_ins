@@ -142,7 +142,10 @@ void UroIns::publish_marker()
     //対地速度を一度も取得していない場合
     if (bt_dvl_received == false){
       broadcast_odom_tf("ship");
-  }
+    }
+    else{
+      broadcast_odom_tf("keep");
+    }
   
   is_ship_data_received = false;
   is_usbl_data_received = false;
@@ -214,8 +217,8 @@ void UroIns::broadcast_ship_tf()
 
   auto now = this->get_clock()->now();
   ship_tf.header.stamp = now;
-  ship_tf.transform.translation.x = y;
-  ship_tf.transform.translation.y = - x;
+  ship_tf.transform.translation.x = x;
+  ship_tf.transform.translation.y = - y;
   tf2::Quaternion quat;
   quat.setRPY(0.0, 0.0, - surface_.orientation[2]);
   ship_tf.transform.rotation.x = quat.x();
@@ -382,13 +385,13 @@ void UroIns::publish_usbl()
   usbl_posi.data.push_back(subsea_.elevation * RADIANS_TO_DEGREES);
   usbl_posi_->publish(usbl_posi);
 
-  auto from_ship_to_rov_dvl = std_msgs::msg::Float64();
+  auto from_ship_to_rov_dvl = std_msgs::msg::Float32();
   float delta_dvl_x = dvl_pose_.x + odom_tf.transform.translation.x - ship_tf.transform.translation.x;
   float delta_dvl_y = dvl_pose_.y + odom_tf.transform.translation.y - ship_tf.transform.translation.y;
   from_ship_to_rov_dvl.data = std::sqrt(std::pow(delta_dvl_x, 2) + std::pow(delta_dvl_y, 2));
   from_ship_to_rov_dvl_->publish(from_ship_to_rov_dvl);
 
-  auto from_ship_to_rov_usbl = std_msgs::msg::Float64();
+  auto from_ship_to_rov_usbl = std_msgs::msg::Float32();
   from_ship_to_rov_usbl.data = std::sqrt(std::pow(subsea_.ned_position[0], 2) + std::pow(subsea_.ned_position[1], 2));
   from_ship_to_rov_usbl_->publish(from_ship_to_rov_usbl);
 }
@@ -397,20 +400,18 @@ void UroIns::broadcast_odom_tf(std::string str)
 {
   auto now = this->get_clock()->now();
   odom_tf.header.stamp = now;
-  odom_tf.child_frame_id = "odom";
 
   if (str == "ship"){
     odom_tf.transform.translation = ship_tf.transform.translation;
-    tf_broadcast_->sendTransform(odom_tf);
   }
-  else if (str == "ubsl"){
+  else if (str == "usbl"){
     odom_tf.transform.translation.x = usbl_tf.transform.translation.x - dvl_pose_.x;
     odom_tf.transform.translation.y = usbl_tf.transform.translation.y - dvl_pose_.y;
-    tf_broadcast_->sendTransform(odom_tf);
   }
   else{
-    //なにもしない
+    //何もしない
   }
+  tf_broadcast_->sendTransform(odom_tf);
 }
 
 void UroIns::get_bottom_track(const interfaces::msg::BottomTrack::SharedPtr msg)
@@ -508,7 +509,7 @@ void UroIns::set_gnss_point(const std::shared_ptr<uro_ins_msgs::srv::SetGnssPoin
     marker.scale.x = 2;
     marker.scale.y = 2;
     marker.scale.z = 2;
-    marker.color.a = 0.8;
+    marker.color.a = 0.2;
     marker.color.r = 0.0;
     marker.color.g = 0.8;
     marker.color.b = 0.0;
@@ -517,21 +518,21 @@ void UroIns::set_gnss_point(const std::shared_ptr<uro_ins_msgs::srv::SetGnssPoin
     visualization_msgs::msg::Marker text;
     text.header = marker.header;
     text.ns = "labels";
-    text.id = 100 + i;
+    text.id = 50 + i;
     text.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
     text.action = visualization_msgs::msg::Marker::ADD;
     text.pose.position = pt;
-    text.pose.position.y += 0.4;  // Slightly above the sphere
+    text.pose.position.x += 1.0;  // Slightly above the sphere
     marker.pose.orientation.x = 0.0;
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;
     marker.pose.orientation.w = 1.0;
-    text.scale.y = 0.2;
-    text.color.a = 0.8;
-    text.color.r = 0.0;
-    text.color.g = 0.8;
-    text.color.b = 0.0;
-    text.text = "No. " + std::to_string(i);
+    text.scale.z = 1.0;
+    text.color.a = 0.5;
+    text.color.r = 0.2;
+    text.color.g = 0.2;
+    text.color.b = 0.2;
+    text.text = "No." + std::to_string(i+1);
     marker_array.markers.push_back(text);
   }
 
@@ -539,11 +540,11 @@ void UroIns::set_gnss_point(const std::shared_ptr<uro_ins_msgs::srv::SetGnssPoin
   line.header.frame_id = "map";
   line.header.stamp = this->get_clock()->now();
   line.ns = "lines";
-  line.id = 999;
+  line.id = 100;
   line.type = visualization_msgs::msg::Marker::LINE_STRIP;
   line.action = visualization_msgs::msg::Marker::ADD;
   line.scale.x = 0.5;
-  line.color.a = 0.8;
+  line.color.a = 0.2;
   line.color.r = 0.0;
   line.color.g = 0.8;
   line.color.b = 0.0;
