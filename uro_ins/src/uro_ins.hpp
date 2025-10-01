@@ -40,16 +40,20 @@
 #include <sys/time.h>
 #include <memory>
 
+#include "std_msgs/msg/float64.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "std_msgs/msg/int32_multi_array.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
+#include "std_srvs/srv/trigger.hpp"
 #include "interfaces/msg/bottom_track.hpp"
+#include "interfaces/msg/ins.hpp"
 #include "uro_ins_msgs/srv/set_gnss_point.hpp"
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
@@ -91,10 +95,12 @@ class UroIns : public rclcpp::Node
     void broadcast_ship_tf();
     void draw_usbl();
     void draw_ship();
+    void publish_usbl();
     void broadcast_odom_tf(std::string str);
     void get_bottom_track(const interfaces::msg::BottomTrack::SharedPtr msg);
-    //void get_usbl_position(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
-    //      std::shared_ptr<std_srvs::srv::Trigger::Response>      response);
+    void get_dvl_posi(const interfaces::msg::INS::SharedPtr msg);
+    void get_usbl_position(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+          std::shared_ptr<std_srvs::srv::Trigger::Response>      response);
     void set_gnss_point(const std::shared_ptr<uro_ins_msgs::srv::SetGnssPoint::Request> request,
           std::shared_ptr<uro_ins_msgs::srv::SetGnssPoint::Response>      response);
 
@@ -105,28 +111,36 @@ class UroIns : public rclcpp::Node
     rclcpp::TimerBase::SharedPtr timer_publish_marker_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_ship_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_usbl_;
-    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr usbl_posi_;  //6月OKIの暫定機能
+    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr usbl_posi_;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr from_ship_to_rov_dvl_;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr from_ship_to_rov_usbl_;
     rclcpp::Subscription<interfaces::msg::BottomTrack>::SharedPtr bottom_track_;
-    //rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr usbl_position_;
+    rclcpp::Subscription<interfaces::msg::INS>::SharedPtr dvl_posi_; 
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr usbl_position_;
     rclcpp::Service<uro_ins_msgs::srv::SetGnssPoint>::SharedPtr gnss_point_;
+    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr gnss_marker_;
 
     geometry_msgs::msg::TransformStamped ship_tf;
+    geometry_msgs::msg::TransformStamped odom_tf;
+    geometry_msgs::msg::TransformStamped usbl_tf;
 
     subsonus_system_state_packet_t surface_;
     subsonus_track_packet_t subsea_;
     subsonus_track_packet_t subsea_old_;
+    geometry_msgs::msg::Point dvl_pose_;
     float usbl_from_map_xyz[3];
     bool is_ship_data_received; //GNSS Compass(subsonus(surface))データ受信フラグ
     bool is_usbl_data_received; //音響測位データ受信フラグ
     bool is_map_latlon_loaded;  //mapフレームの緯度経度取得フラグ
     bool bt_dvl_received;       //DVLの対地速度（bottom track）取得済みフラグ
-    int usbl_reliability_level; //０：未受信、１：速度3knot以上、２：傘の範囲外、３：正常
+    int usbl_reliability_level; //０：未接続、１：未受信、２：速度3knot以上、３：傘の範囲外、４：正常
     float map_origin_lat;       //map原点の緯度
     float map_origin_lon;       //map原点の経度
     float map_origin_h;         //map原点の高度
     int ship_marker_count;      //前回shipマーカー描画からのカウント
     int usbl_marker_count;      //前回usblマーカー描画からのカウント
     float bottom_track_fom[3];  //DVLの対地速度（bottom track）のFOM
+    int gnss_point_num;         //描画しているマーカーの数
 };
 
 #endif //URO_INS_HPP

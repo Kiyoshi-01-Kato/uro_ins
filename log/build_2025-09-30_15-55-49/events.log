@@ -1,0 +1,6 @@
+[0.000000] (-) TimerEvent: {}
+[0.000391] (-) JobUnselected: {'identifier': 'uro_ins_msgs'}
+[0.000508] (uro_ins) JobQueued: {'identifier': 'uro_ins', 'dependencies': OrderedDict([('uro_ins_msgs', '/home/lk_kato/uro_ws/src/uro_ins/install/uro_ins_msgs')])}
+[0.000839] (uro_ins) JobStarted: {'identifier': 'uro_ins'}
+[0.009965] (uro_ins) JobEnded: {'identifier': 'uro_ins', 'rc': 1}
+[0.020377] (-) EventReactorShutdown: {}

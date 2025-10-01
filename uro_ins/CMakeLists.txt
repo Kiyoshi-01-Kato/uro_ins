@@ -34,6 +34,7 @@ find_package(tf2_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(GeographicLib REQUIRED)
 find_package(geographic_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(interfaces REQUIRED)
 find_package(uro_ins_msgs REQUIRED)
@@ -73,6 +74,7 @@ tf2_msgs
 geometry_msgs
 visualization_msgs
 geographic_msgs
+std_srvs
 interfaces
 uro_ins_msgs
 )

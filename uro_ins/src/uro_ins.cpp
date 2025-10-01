@@ -27,40 +27,14 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "rclcpp/rclcpp.hpp"
-#include <cstdlib>
-#include <cstdio>
-#include <cstdint>
-#include <cstring>
 #include <algorithm>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/time.h>
 
-#include "std_msgs/msg/float64_multi_array.hpp"
-#include "std_msgs/msg/int32_multi_array.hpp"
-#include "geometry_msgs/msg/point_stamped.hpp"
-#include "geometry_msgs/msg/transform_stamped.hpp"
-#include <tf2_ros/static_transform_broadcaster.h>
-#include <tf2/LinearMath/Quaternion.h>
-#include <visualization_msgs/msg/marker.hpp>
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
 #endif
 
-#ifdef _WIN32
-#include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#else
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#endif
-
 #include "uro_ins.hpp"
-#include "uro_subsonus.hpp"
 
 using std::placeholders::_1;
 #define RADIANS_TO_DEGREES (180.0/M_PI)
@@ -74,14 +48,23 @@ UroIns::UroIns() : Node("ins_node")
   marker_ship_ = this->create_publisher<visualization_msgs::msg::Marker>("/ins_node/marker_ship", 10);
   marker_usbl_ = this->create_publisher<visualization_msgs::msg::Marker>("/ins_node/marker_usbl", 10);
   usbl_posi_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("/ins_node/usbl_posi", 10);
-  //Nucleusの対地速度パケット取得
+  from_ship_to_rov_dvl_ = this->create_publisher<std_msgs::msg::Float64>("/ins_node/horizontal_distance_ship_rov_dvl", 10);
+  from_ship_to_rov_usbl_ = this->create_publisher<std_msgs::msg::Float64>("/ins_node/horizontal_distance_ship_rov_usbl", 10);
+
+  //Nucleusのパケット取得
   bottom_track_ = this->create_subscription<interfaces::msg::BottomTrack>(
     "/nucleus_node/bottom_track_packets", 10, std::bind(&UroIns::get_bottom_track, this, _1));
+  dvl_posi_ = this->create_subscription<interfaces::msg::INS>(
+    "/nucleus_node/ins_packets", 10, std::bind(&UroIns::get_dvl_posi, this, _1));
 
-  //usbl_position_ = this->create_service<std_srvs::srv::Trigger>("/ins_node/get_usbl_position", &get_usbl_position);
+  usbl_position_ = this->create_service<std_srvs::srv::Trigger>(
+    "/ins_node/get_usbl_position",
+    std::bind(&UroIns::get_usbl_position, this, std::placeholders::_1, std::placeholders::_2));
   gnss_point_ = this->create_service<uro_ins_msgs::srv::SetGnssPoint>(
     "/ins_node/set_gnss_point",
     std::bind(&UroIns::set_gnss_point, this, std::placeholders::_1, std::placeholders::_2));
+
+  gnss_marker_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/ins_node/marker_gnss", 10);
 
   //subsonusデータ受信(音響測位データ受診時にUSBL描画)
   timer_subsonus_ = this->create_wall_timer(
@@ -106,11 +89,12 @@ UroIns::UroIns() : Node("ins_node")
   map_origin_h = 0.0;
   ship_marker_count = 0;
   usbl_marker_count = 0;
+  gnss_point_num = 0;
   surface_ = {};
   subsea_ = {};
   subsea_old_ = {};
   std::fill(std::begin(usbl_from_map_xyz), std::end(usbl_from_map_xyz), 0);
-  std::fill(std::begin(bottom_track_fom), std::end(bottom_track_fom), 0);
+  std::fill(std::begin(bottom_track_fom), std::end(bottom_track_fom), 10);
 }
 
 int main(int argc, char ** argv)
