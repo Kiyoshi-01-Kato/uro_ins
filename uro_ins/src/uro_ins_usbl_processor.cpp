@@ -212,13 +212,13 @@ void UroIns::load_map_latlon()
 void UroIns::broadcast_ship_tf()
 {
   LocalCartesian prij(map_origin_lat, map_origin_lon, map_origin_h);
-  double x, y, z;
+  double x, y, z;   //この出力はxが東、yが北
   prij.Forward(surface_.latitude * RADIANS_TO_DEGREES, surface_.longitude * RADIANS_TO_DEGREES, surface_.height, x, y, z);
 
   auto now = this->get_clock()->now();
   ship_tf.header.stamp = now;
-  ship_tf.transform.translation.x = x;
-  ship_tf.transform.translation.y = - y;
+  ship_tf.transform.translation.x = y;    //この出力はxが東、yが北
+  ship_tf.transform.translation.y = - x;  //この出力はxが東、yが北
   tf2::Quaternion quat;
   quat.setRPY(0.0, 0.0, - surface_.orientation[2]);
   ship_tf.transform.rotation.x = quat.x();
@@ -288,10 +288,10 @@ void UroIns::draw_ship()
 void UroIns::broadcast_usbl_tf()
 {
   LocalCartesian prij(map_origin_lat, map_origin_lon, map_origin_h);
-  double x, y, z;
+  double x, y, z;   //この出力はxが東、yが北
   prij.Forward(subsea_.latitude * RADIANS_TO_DEGREES, subsea_.longitude * RADIANS_TO_DEGREES, subsea_.height, x, y, z);
-  usbl_from_map_xyz[0] = x;
-  usbl_from_map_xyz[1] = - y;
+  usbl_from_map_xyz[0] = y;    //この出力はxが東、yが北
+  usbl_from_map_xyz[1] = - x;  //この出力はxが東、yが北
   usbl_from_map_xyz[2] = - subsea_.depth;
   auto now = this->get_clock()->now();
   usbl_tf.header.stamp = now;
@@ -412,6 +412,7 @@ void UroIns::broadcast_odom_tf(std::string str)
     //何もしない
   }
   tf_broadcast_->sendTransform(odom_tf);
+  publish_odom_rov();
 }
 
 void UroIns::get_bottom_track(const interfaces::msg::BottomTrack::SharedPtr msg)
@@ -428,19 +429,35 @@ void UroIns::get_dvl_posi(const interfaces::msg::INS::SharedPtr msg)
     dvl_pose_.z = msg->position_frame_z;
 }
 
+
+void UroIns::publish_odom_rov()
+{
+  auto odom_rov = std_msgs::msg::Float64MultiArray();
+  odom_rov.data.push_back(odom_tf.transform.translation.x);
+  odom_rov.data.push_back(odom_tf.transform.translation.y);
+  odom_rov.data.push_back(odom_tf.transform.translation.z);
+  odom_rov.data.push_back(dvl_pose_.x);
+  odom_rov.data.push_back(dvl_pose_.y);
+  odom_rov.data.push_back(dvl_pose_.z);
+  odom_rov.data.push_back(dvl_pose_.x + odom_tf.transform.translation.x);
+  odom_rov.data.push_back(dvl_pose_.y + odom_tf.transform.translation.y);
+  odom_rov.data.push_back(dvl_pose_.z + odom_tf.transform.translation.z);
+  odom_rov_->publish(odom_rov);
+}
+
 void UroIns::get_usbl_position(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
           std::shared_ptr<std_srvs::srv::Trigger::Response>      response)
 {
   (void)request;
   if ((bottom_track_fom[0] >= 1) || (bottom_track_fom[1] >= 1)){
     response->success = false;
-    response->message = "fail : usbl is unreliable";
+    response->message = "fail : bottom track is unreliable";
     return;
   }
 
   if (usbl_reliability_level <= 2){
     response->success = false;
-    response->message = "fail : bottom track is unreliable";
+    response->message = "fail : usbl is unreliable";
   }
   else{
     broadcast_odom_tf("usbl");
@@ -487,10 +504,10 @@ void UroIns::set_gnss_point(const std::shared_ptr<uro_ins_msgs::srv::SetGnssPoin
  
   for (int i = 0; i < gnss_point_num; ++i) {
     geometry_msgs::msg::Point pt;
-    double x, y, z;
+    double x, y, z;   //この出力はxが東、yが北
     prij.Forward(request->poses[i].position.latitude, request->poses[i].position.longitude, 0.0, x, y, z);
-    pt.x = x;
-    pt.y = - y;
+    pt.x = y;    //この出力はxが東、yが北
+    pt.y = - x;  //この出力はxが東、yが北
     pt.z = - request->poses[i].position.altitude;
     points.push_back(pt);
 
