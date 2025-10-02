@@ -128,6 +128,7 @@ void UroIns::publish_marker()
       load_map_latlon();
       is_map_latlon_loaded = true;
     }
+    broadcast_odom_tf("keep");
   }else{
     broadcast_ship_tf();
     draw_ship();
@@ -244,25 +245,30 @@ void UroIns::draw_ship()
 
   marker_ship.scale.x = 0.1;
   float length = 23.36;
-  float width = 5.4;
+  float width = 5.4;                //右舷取り付け：正、左舷取り付け：負
+  float tip_to_surface = length/2;  //船の先端からsurfaceまでの距離[m]
   geometry_msgs::msg::Point point;
   point.x = 0;
   point.y = 0;
   point.z = 0;
   marker_ship.points.push_back(point);
-  point.x = width;
-  point.y = -width/2;
+  point.x = tip_to_surface - std::abs(width);
+  point.y = 0;
   point.z = 0;
   marker_ship.points.push_back(point);
-  point.x = 0;
-  point.y = -width;
+  point.x = tip_to_surface;
+  point.y = width/2;
   point.z = 0;
   marker_ship.points.push_back(point);
-  point.x = -length;
-  point.y = -width;
+  point.x = tip_to_surface - std::abs(width);
+  point.y = width;
   point.z = 0;
   marker_ship.points.push_back(point);
-  point.x = -length;
+  point.x = -length + tip_to_surface;
+  point.y = width;
+  point.z = 0;
+  marker_ship.points.push_back(point);
+  point.x = -length + tip_to_surface;
   point.y = 0;
   point.z = 0;
   marker_ship.points.push_back(point);
