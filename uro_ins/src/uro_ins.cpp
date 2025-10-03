@@ -91,6 +91,7 @@ UroIns::UroIns() : Node("ins_node")
   ship_marker_count = 0;
   usbl_marker_count = 0;
   gnss_point_num = 0;
+  horizontal_distance_usbl = 0.0;
   surface_ = {};
   subsea_ = {};
   subsea_old_ = {};

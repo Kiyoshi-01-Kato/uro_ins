@@ -143,6 +143,7 @@ class UroIns : public rclcpp::Node
     int usbl_marker_count;      //前回usblマーカー描画からのカウント
     float bottom_track_fom[3];  //DVLの対地速度（bottom track）のFOM
     int gnss_point_num;         //描画しているマーカーの数
+    float horizontal_distance_usbl; //USBL参照の取り付け位置とROVの水平距離
 };
 
 #endif //URO_INS_HPP

@@ -167,13 +167,11 @@ void UroIns::evaluate_usbl_reliability()
     return;
   }
 
-  if (is_usbl_data_received ==true){
-    usbl_marker_count = 0;
-  }else{
-    usbl_marker_count++;
-  }
-  if (usbl_marker_count >= 30){
-    usbl_reliability_level = 1;
+  usbl_marker_count++;
+  if (is_usbl_data_received == false){
+    if (usbl_marker_count >= 100){
+      usbl_reliability_level = 1;
+    }
     return;
   }
 
@@ -188,10 +186,16 @@ void UroIns::evaluate_usbl_reliability()
   float v_limit = 1.54332;  //3knot
 
   if (elapsed_time * v_limit < diff_distance){
-    usbl_reliability_level = 2;
+    if (usbl_marker_count >= 100){
+      usbl_reliability_level = 1;
+    }
+    else{
+      usbl_reliability_level = 2;
+    }
     return;
   }
 
+  usbl_marker_count = 0;  //USBL正常
   float elevation_deg = subsea_.elevation * RADIANS_TO_DEGREES;
   if (elevation_deg > 75){
     usbl_reliability_level = 3;
@@ -278,10 +282,15 @@ void UroIns::draw_ship()
   marker_ship.points.push_back(point);
 
   marker_ship.color.a = 0.8f;
-  if (usbl_reliability_level >= 1){
+  if (usbl_reliability_level >= 2){
     marker_ship.color.r = 0.3f;
     marker_ship.color.g = 0.3f;
     marker_ship.color.b = 1.0f;
+  }
+  else if (usbl_reliability_level == 1){
+    marker_ship.color.r = 1.0f;
+    marker_ship.color.g = 0.3f;
+    marker_ship.color.b = 0.3f;
   }
   else{
     marker_ship.color.r = 0.0f;
@@ -359,9 +368,12 @@ void UroIns::draw_usbl()
   }
   else if (usbl_reliability_level == 1){
     marker_usbl.type = visualization_msgs::msg::Marker::CUBE;
-    marker_usbl.color.r = 0.5f;
-    marker_usbl.color.g = 0.5f;
-    marker_usbl.color.b = 0.5f;
+    marker_usbl.color.r = 1.0f;
+    marker_usbl.color.g = 0.3f;
+    marker_usbl.color.b = 0.3f;
+    marker_usbl.scale.x = 2.0;
+    marker_usbl.scale.y = 2.0;
+    marker_usbl.scale.z = 2.0;
   }
   else if (usbl_reliability_level == 0){
     marker_usbl.type = visualization_msgs::msg::Marker::CUBE;
@@ -398,7 +410,8 @@ void UroIns::publish_usbl()
   from_ship_to_rov_dvl_->publish(from_ship_to_rov_dvl);
 
   auto from_ship_to_rov_usbl = std_msgs::msg::Float32();
-  from_ship_to_rov_usbl.data = std::sqrt(std::pow(subsea_.ned_position[0], 2) + std::pow(subsea_.ned_position[1], 2));
+  horizontal_distance_usbl = std::sqrt(std::pow(subsea_.ned_position[0], 2) + std::pow(subsea_.ned_position[1], 2));
+  from_ship_to_rov_usbl.data = horizontal_distance_usbl;
   from_ship_to_rov_usbl_->publish(from_ship_to_rov_usbl);
 }
 
