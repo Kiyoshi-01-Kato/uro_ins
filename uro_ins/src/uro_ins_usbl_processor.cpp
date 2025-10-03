@@ -282,20 +282,20 @@ void UroIns::draw_ship()
   marker_ship.points.push_back(point);
 
   marker_ship.color.a = 0.8f;
-  if (usbl_reliability_level >= 2){
-    marker_ship.color.r = 0.3f;
-    marker_ship.color.g = 0.3f;
-    marker_ship.color.b = 1.0f;
+  if (usbl_reliability_level == 0){
+    marker_ship.color.r = 0.0f;
+    marker_ship.color.g = 0.0f;
+    marker_ship.color.b = 0.0f;
   }
-  else if (usbl_reliability_level == 1){
+  else if ((usbl_reliability_level == 1) || (horizontal_distance_usbl < 25)){
     marker_ship.color.r = 1.0f;
     marker_ship.color.g = 0.3f;
     marker_ship.color.b = 0.3f;
   }
   else{
-    marker_ship.color.r = 0.0f;
-    marker_ship.color.g = 0.0f;
-    marker_ship.color.b = 0.0f;
+    marker_ship.color.r = 0.3f;
+    marker_ship.color.g = 0.3f;
+    marker_ship.color.b = 1.0f;
   }
   marker_ship_->publish(marker_ship);
 }
