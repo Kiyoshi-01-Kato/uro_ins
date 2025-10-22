@@ -121,6 +121,7 @@ void UroIns::publish_marker()
 {
   evaluate_usbl_reliability();
   if (is_map_latlon_loaded == false){
+    broadcast_odom_tf("keep");
     if (is_ship_data_received == false){
       return;
     }
@@ -128,7 +129,6 @@ void UroIns::publish_marker()
       load_map_latlon();
       is_map_latlon_loaded = true;
     }
-    broadcast_odom_tf("keep");
   }else{
     broadcast_ship_tf();
     draw_ship();
