@@ -47,10 +47,10 @@ UroIns::UroIns() : Node("ins_node")
   static_tf_broadcast_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
   marker_ship_ = this->create_publisher<visualization_msgs::msg::Marker>("/ins_node/marker_ship", 10);
   marker_usbl_ = this->create_publisher<visualization_msgs::msg::Marker>("/ins_node/marker_usbl", 10);
-  usbl_posi_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("/ins_node/usbl_posi", 10);
+  usbl_data_ = this->create_publisher<uro_ins_msgs::msg::UsblData>("/ins_node/usbl_data", 10);
   from_ship_to_rov_dvl_ = this->create_publisher<std_msgs::msg::Float32>("/ins_node/horizontal_distance_ship_rov_dvl", 10);
   from_ship_to_rov_usbl_ = this->create_publisher<std_msgs::msg::Float32>("/ins_node/horizontal_distance_ship_rov_usbl", 10);
-  odom_rov_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("/ins_node/odom_rov", 10);
+  ins_data_ = this->create_publisher<uro_ins_msgs::msg::InsData>("/ins_node/ins_data", 10);
 
   //Nucleusのパケット取得
   bottom_track_ = this->create_subscription<interfaces::msg::BottomTrack>(

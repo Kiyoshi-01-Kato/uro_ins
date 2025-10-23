@@ -49,6 +49,8 @@
 #include "interfaces/msg/bottom_track.hpp"
 #include "interfaces/msg/ins.hpp"
 #include "uro_ins_msgs/srv/set_gnss_point.hpp"
+#include "uro_ins_msgs/msg/usbl_data.hpp"
+#include "uro_ins_msgs/msg/ins_data.hpp"
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -95,8 +97,7 @@ class UroIns : public rclcpp::Node
     void broadcast_ship_tf();
     void draw_usbl();
     void draw_ship();
-    void publish_usbl();
-    void publish_odom_rov();
+    void publish_log_data();
     void broadcast_odom_tf(std::string str);
     void get_bottom_track(const interfaces::msg::BottomTrack::SharedPtr msg);
     void get_dvl_posi(const interfaces::msg::INS::SharedPtr msg);
@@ -112,10 +113,10 @@ class UroIns : public rclcpp::Node
     rclcpp::TimerBase::SharedPtr timer_publish_marker_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_ship_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_usbl_;
-    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr usbl_posi_;
+    rclcpp::Publisher<uro_ins_msgs::msg::UsblData>::SharedPtr usbl_data_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr from_ship_to_rov_dvl_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr from_ship_to_rov_usbl_;
-    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr odom_rov_;
+    rclcpp::Publisher<uro_ins_msgs::msg::InsData>::SharedPtr ins_data_;
     rclcpp::Subscription<interfaces::msg::BottomTrack>::SharedPtr bottom_track_;
     rclcpp::Subscription<interfaces::msg::INS>::SharedPtr dvl_posi_; 
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr usbl_position_;
