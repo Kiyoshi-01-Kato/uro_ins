@@ -417,7 +417,7 @@ void UroIns::get_dvl_posi(const interfaces::msg::INS::SharedPtr msg)
 {
     dvl_pose_.x = msg->position_frame_x;
     dvl_pose_.y = - msg->position_frame_y;
-    dvl_pose_.z = msg->position_frame_z;
+    dvl_pose_.z = - msg->position_frame_z;
 }
 
 void UroIns::get_usbl_position(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
@@ -560,7 +560,7 @@ void UroIns::publish_log_data()
   usbl_data.ship_geopoint.longitude = surface_.longitude * RADIANS_TO_DEGREES;
   usbl_data.ship_geopoint.altitude = surface_.height;
   usbl_data.map2ship.position.x = ship_tf.transform.translation.x;
-  usbl_data.map2ship.position.y = ship_tf.transform.translation.y;
+  usbl_data.map2ship.position.y = - ship_tf.transform.translation.y;
   usbl_data.map2ship.position.z = subsea_.observer_depth;
   quat.setRPY(surface_.orientation[0] * RADIANS_TO_DEGREES, surface_.orientation[1] * RADIANS_TO_DEGREES, surface_.orientation[2] * RADIANS_TO_DEGREES);
   usbl_data.map2ship.orientation.x = quat.x();
@@ -571,7 +571,7 @@ void UroIns::publish_log_data()
   usbl_data.usbl_geopoint.longitude = subsea_.longitude * RADIANS_TO_DEGREES;
   usbl_data.usbl_geopoint.altitude = subsea_.height;
   usbl_data.map2usbl.x = usbl_tf.transform.translation.x;
-  usbl_data.map2usbl.y = usbl_tf.transform.translation.y;
+  usbl_data.map2usbl.y = - usbl_tf.transform.translation.y;
   usbl_data.map2usbl.z = subsea_.depth;
   usbl_data.ship2usbl.x = subsea_.ned_position[0];
   usbl_data.ship2usbl.y = subsea_.ned_position[1];
@@ -597,7 +597,7 @@ void UroIns::publish_log_data()
   ins_data.map2odom.x = odom_tf.transform.translation.x;
   ins_data.map2odom.y = odom_tf.transform.translation.y;
   ins_data.map2odom.z = 0;
-  prij.Reverse(- (odom_tf.transform.translation.y + dvl_pose_.y), odom_tf.transform.translation.x + dvl_pose_.x, -(odom_tf.transform.translation.z + dvl_pose_.z), lat, lon, h); //この入力はxが東、yが北
+  prij.Reverse(- (odom_tf.transform.translation.y + dvl_pose_.y), odom_tf.transform.translation.x + dvl_pose_.x, odom_tf.transform.translation.z + dvl_pose_.z, lat, lon, h); //この入力はxが東、yが北
   ins_data.baselink_geopoint.latitude = lat;
   ins_data.baselink_geopoint.longitude = lon;
   ins_data.baselink_geopoint.altitude = h;
