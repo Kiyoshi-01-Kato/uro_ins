@@ -247,7 +247,7 @@ void UroIns::draw_ship()
   marker_ship.lifetime.sec = 100000;
   marker_ship.lifetime.nanosec = 0;
 
-  marker_ship.scale.x = 0.1;
+  marker_ship.scale.x = 0.5;
   float length = 23.36;
   float width = 5.4;                //右舷取り付け：正、左舷取り付け：負
   float tip_to_surface = length/2;  //船の先端からsurfaceまでの距離[m]
@@ -281,7 +281,7 @@ void UroIns::draw_ship()
   point.z = 0;
   marker_ship.points.push_back(point);
 
-  marker_ship.color.a = 0.8f;
+  marker_ship.color.a = 0.6f;
   if (usbl_reliability_level == 0){
     marker_ship.color.r = 0.0f;
     marker_ship.color.g = 0.0f;
@@ -289,8 +289,8 @@ void UroIns::draw_ship()
   }
   else if ((usbl_reliability_level == 1) || (horizontal_distance_usbl < 25)){
     marker_ship.color.r = 1.0f;
-    marker_ship.color.g = 0.3f;
-    marker_ship.color.b = 0.3f;
+    marker_ship.color.g = 0.0f;
+    marker_ship.color.b = 0.0f;
   }
   else{
     marker_ship.color.r = 0.3f;
@@ -459,8 +459,9 @@ void UroIns::set_gnss_point(const std::shared_ptr<uro_ins_msgs::srv::SetGnssPoin
 
     visualization_msgs::msg::Marker delete_text;
     delete_text.header = delete_marker.header;
+    delete_marker.header.stamp = this->get_clock()->now();
     delete_text.ns = "labels";
-    delete_text.id = 100 + i;
+    delete_text.id = 50 + i;
     delete_text.action = visualization_msgs::msg::Marker::DELETE;
     marker_array.markers.push_back(delete_text);
   }
@@ -469,7 +470,7 @@ void UroIns::set_gnss_point(const std::shared_ptr<uro_ins_msgs::srv::SetGnssPoin
   delete_line.header.frame_id = "map";
   delete_line.header.stamp = this->get_clock()->now();
   delete_line.ns = "lines";
-  delete_line.id = 999;
+  delete_line.id = 100;
   delete_line.action = visualization_msgs::msg::Marker::DELETE;
   marker_array.markers.push_back(delete_line);
 
@@ -501,7 +502,7 @@ void UroIns::set_gnss_point(const std::shared_ptr<uro_ins_msgs::srv::SetGnssPoin
     marker.scale.x = 2;
     marker.scale.y = 2;
     marker.scale.z = 2;
-    marker.color.a = 0.2;
+    marker.color.a = 0.5;
     marker.color.r = 0.0;
     marker.color.g = 0.8;
     marker.color.b = 0.0;
@@ -536,7 +537,7 @@ void UroIns::set_gnss_point(const std::shared_ptr<uro_ins_msgs::srv::SetGnssPoin
   line.type = visualization_msgs::msg::Marker::LINE_STRIP;
   line.action = visualization_msgs::msg::Marker::ADD;
   line.scale.x = 0.5;
-  line.color.a = 0.2;
+  line.color.a = 0.5;
   line.color.r = 0.0;
   line.color.g = 0.8;
   line.color.b = 0.0;
@@ -567,7 +568,7 @@ void UroIns::publish_log_data()
   usbl_data.map2ship.orientation.y = quat.y();
   usbl_data.map2ship.orientation.z = quat.z();
   usbl_data.map2ship.orientation.w = quat.w();
-  usbl_data.usbl_geopoint.latitude = subsea_.longitude * RADIANS_TO_DEGREES;
+  usbl_data.usbl_geopoint.latitude = subsea_.latitude * RADIANS_TO_DEGREES;
   usbl_data.usbl_geopoint.longitude = subsea_.longitude * RADIANS_TO_DEGREES;
   usbl_data.usbl_geopoint.altitude = subsea_.height;
   usbl_data.map2usbl.x = usbl_tf.transform.translation.x;
@@ -577,8 +578,8 @@ void UroIns::publish_log_data()
   usbl_data.ship2usbl.y = subsea_.ned_position[1];
   usbl_data.ship2usbl.z = subsea_.ned_position[2];
   usbl_data.range = subsea_.range;
-  usbl_data.azimuth = subsea_.azimuth;
-  usbl_data.elevation = subsea_.elevation;
+  usbl_data.azimuth = subsea_.azimuth * RADIANS_TO_DEGREES;
+  usbl_data.elevation = subsea_.elevation * RADIANS_TO_DEGREES;
   usbl_data.usbl_reliability_level = usbl_reliability_level;
   usbl_data_->publish(usbl_data);
   
@@ -590,20 +591,20 @@ void UroIns::publish_log_data()
   ins_data.map_geopoint.latitude = map_origin_lat;
   ins_data.map_geopoint.longitude = map_origin_lon;
   ins_data.map_geopoint.altitude = map_origin_h;
-  prij.Reverse(- odom_tf.transform.translation.y, odom_tf.transform.translation.x, 0, lat, lon, h); //この入力はxが東、yが北
+  prij.Reverse(- odom_tf.transform.translation.y, odom_tf.transform.translation.x, odom_tf.transform.translation.z, lat, lon, h); //この入力はxが東、yが北
   ins_data.odom_geopoint.latitude = lat;
   ins_data.odom_geopoint.longitude = lon;
   ins_data.odom_geopoint.altitude = h;
   ins_data.map2odom.x = odom_tf.transform.translation.x;
   ins_data.map2odom.y = odom_tf.transform.translation.y;
-  ins_data.map2odom.z = 0;
+  ins_data.map2odom.z = odom_tf.transform.translation.z;
   prij.Reverse(- (odom_tf.transform.translation.y + dvl_pose_.y), odom_tf.transform.translation.x + dvl_pose_.x, odom_tf.transform.translation.z + dvl_pose_.z, lat, lon, h); //この入力はxが東、yが北
   ins_data.baselink_geopoint.latitude = lat;
   ins_data.baselink_geopoint.longitude = lon;
   ins_data.baselink_geopoint.altitude = h;
   ins_data.map2baselink.x = odom_tf.transform.translation.x + dvl_pose_.x;
   ins_data.map2baselink.y = odom_tf.transform.translation.y + dvl_pose_.y;
-  ins_data.map2baselink.z = odom_tf.transform.translation.y + dvl_pose_.z;
+  ins_data.map2baselink.z = odom_tf.transform.translation.z + dvl_pose_.z;
   ins_data.odom2baselink.x = dvl_pose_.x;
   ins_data.odom2baselink.y = dvl_pose_.y;
   ins_data.odom2baselink.z = dvl_pose_.z;
