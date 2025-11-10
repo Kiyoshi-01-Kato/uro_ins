@@ -151,15 +151,29 @@ void UroSubsonus::receive_subsonus(){
   */
 
   FD_ZERO(&readfds);
-  FD_SET(tcp_socket, &readfds);
-  select(tcp_socket + 1, &readfds, NULL, NULL, &t_wait);
-  if(FD_ISSET(tcp_socket, &readfds))
+  FD_SET(tcp_socket_surface, &readfds);
+  FD_SET(tcp_socket_subsea, &readfds);
+  int max_fd = std::max(tcp_socket_surface, tcp_socket_subsea);
+  int result = select(max_fd + 1, &readfds, NULL, NULL, &t_wait);
+  if (result < 0) {
+      printf("select error");
+  }else if (result == 0) {
+    printf("select timeout: no data available\n");
+  } else {
+    // 各ソケットのFD_ISSET結果を表示
+    //printf("FD_ISSET surface: %d\n", FD_ISSET(tcp_socket_surface, &readfds));
+    //printf("FD_ISSET subsea: %d\n", FD_ISSET(tcp_socket_subsea, &readfds));
+  }
+  //select(tcp_socket_surface + 1, &readfds, NULL, NULL, &t_wait);
+  //select(tcp_socket_subsea + 1, &readfds, NULL, NULL, &t_wait);
+  //surface receive
+  if(FD_ISSET(tcp_socket_surface, &readfds))
   {
 
 #ifdef _WIN32
-    bytes_received = recv(tcp_socket,an_decoder_pointer(&an_decoder), an_decoder_size(&an_decoder),0);
+    bytes_received = recv(tcp_socket_surface,an_decoder_pointer(&an_decoder), an_decoder_size(&an_decoder),0);
 #else
-    bytes_received = recv(tcp_socket, an_decoder_pointer(&an_decoder), an_decoder_size(&an_decoder), MSG_DONTWAIT);
+    bytes_received = recv(tcp_socket_surface, an_decoder_pointer(&an_decoder), an_decoder_size(&an_decoder), MSG_DONTWAIT);
 #endif
 
     if(bytes_received > 0)
@@ -175,24 +189,25 @@ void UroSubsonus::receive_subsonus(){
           //printf("Packet ID %u of Length %u\n", an_packet->id, an_packet->length);
           /* copy all the binary data into the typedef struct for the packet */
           /* this allows easy access to all the different values             */
-          if(decode_subsonus_system_state_packet(&system_state_packet, an_packet) == 0)
+          if(decode_subsonus_system_state_packet(&surface_system_state_packet, an_packet) == 0)
           {
+            printf("Surface Subsonus System State Packet:\n");
             //printf("Subsonus System State Packet:\n");
-            //printf("\tLatitude = %f, Longitude = %f, Height = %f\n", system_state_packet.latitude * RADIANS_TO_DEGREES, system_state_packet.longitude * RADIANS_TO_DEGREES, system_state_packet.height);
-            //printf("\tRoll = %f, Pitch = %f, Heading = %f\n", system_state_packet.orientation[0] * RADIANS_TO_DEGREES, system_state_packet.orientation[1] * RADIANS_TO_DEGREES, system_state_packet.orientation[2] * RADIANS_TO_DEGREES);
-            ins_->set_ship_data(system_state_packet);
+            printf("\tLatitude = %f, Longitude = %f, Height = %f\n", surface_system_state_packet.latitude * RADIANS_TO_DEGREES, surface_system_state_packet.longitude * RADIANS_TO_DEGREES, surface_system_state_packet.height);
+            printf("\tRoll = %f, Pitch = %f, Heading = %f\n", surface_system_state_packet.orientation[0] * RADIANS_TO_DEGREES, surface_system_state_packet.orientation[1] * RADIANS_TO_DEGREES, surface_system_state_packet.orientation[2] * RADIANS_TO_DEGREES);
+            ins_->set_ship_data(surface_system_state_packet);
           }
         }
         else if(an_packet->id == packet_id_subsonus_track) /* subsonus track packet */
         {
-          printf("Packet ID %u of Length %u\n", an_packet->id, an_packet->length);
+          //printf("Packet ID %u of Length %u\n", an_packet->id, an_packet->length);
           /* copy all the binary data into the typedef struct for the packet */
           /* this allows easy access to all the different values             */
           if(decode_subsonus_track_packet(&subsonus_track_packet, an_packet) == 0)
           {
-            printf("Remote Track Packet:\n");
-            printf("\tLatitude = %f, Longitude = %f, Height = %f\n", subsonus_track_packet.latitude * RADIANS_TO_DEGREES, subsonus_track_packet.longitude * RADIANS_TO_DEGREES, subsonus_track_packet.height);
-            printf("\tRange = %f, Azimuth = %f, Elevation = %f\n", subsonus_track_packet.range, subsonus_track_packet.azimuth * RADIANS_TO_DEGREES, subsonus_track_packet.elevation * RADIANS_TO_DEGREES);
+            //printf("Remote Track Packet:\n");
+            //printf("\tLatitude = %f, Longitude = %f, Height = %f\n", subsonus_track_packet.latitude * RADIANS_TO_DEGREES, subsonus_track_packet.longitude * RADIANS_TO_DEGREES, subsonus_track_packet.height);
+            //printf("\tRange = %f, Azimuth = %f, Elevation = %f\n", subsonus_track_packet.range, subsonus_track_packet.azimuth * RADIANS_TO_DEGREES, subsonus_track_packet.elevation * RADIANS_TO_DEGREES);
             //this->track_callback(subsonus_track_packet);
             ins_->set_usbl_data(subsonus_track_packet);
           }
@@ -207,17 +222,78 @@ void UroSubsonus::receive_subsonus(){
       }
     }
   }
+
+  //subsea receive
+  if(FD_ISSET(tcp_socket_subsea, &readfds))
+  {
+   
+#ifdef _WIN32
+    bytes_received = recv(tcp_socket_subsea,an_decoder_pointer(&an_decoder), an_decoder_size(&an_decoder),0);
+#else
+    bytes_received = recv(tcp_socket_subsea, an_decoder_pointer(&an_decoder), an_decoder_size(&an_decoder), MSG_DONTWAIT);
+#endif
+    
+    if(bytes_received > 0)
+    {
+      /* increment the decode buffer length by the number of bytes received */
+      an_decoder_increment(&an_decoder, bytes_received);
+      
+      /* decode all the packets in the buffer */
+      while((an_packet = an_packet_decode_dynamic(&an_decoder)) != NULL)
+      {
+        if(an_packet->id == packet_id_subsonus_system_state) /* system state packet */
+        {
+          //printf("Packet ID %u of Length %u\n", an_packet->id, an_packet->length);
+          /* copy all the binary data into the typedef struct for the packet */
+          /* this allows easy access to all the different values             */
+          if(decode_subsonus_system_state_packet(&subsea_system_state_packet, an_packet) == 0)
+          {
+            printf("Subsea Subsonus System State Packet:\n");
+            //printf("Subsonus System State Packet:\n");
+            printf("\tLatitude = %f, Longitude = %f, Height = %f\n", subsea_system_state_packet.latitude * RADIANS_TO_DEGREES, subsea_system_state_packet.longitude * RADIANS_TO_DEGREES, subsea_system_state_packet.height);
+            printf("\tRoll = %f, Pitch = %f, Heading = %f\n", subsea_system_state_packet.orientation[0] * RADIANS_TO_DEGREES, subsea_system_state_packet.orientation[1] * RADIANS_TO_DEGREES, subsea_system_state_packet.orientation[2] * RADIANS_TO_DEGREES);
+            //ins_->set_ship_data(subsea_system_state_packet);
+          }
+        }
+        else if(an_packet->id == packet_id_subsonus_track) /* subsonus track packet */
+        {
+          printf("Packet ID %u of Length %u\n", an_packet->id, an_packet->length);
+          /* copy all the binary data into the typedef struct for the packet */
+          /* this allows easy access to all the different values             */
+          if(decode_subsonus_track_packet(&subsonus_track_packet, an_packet) == 0)
+          {
+            //printf("Remote Track Packet:\n");
+            //printf("\tLatitude = %f, Longitude = %f, Height = %f\n", subsonus_track_packet.latitude * RADIANS_TO_DEGREES, subsonus_track_packet.longitude * RADIANS_TO_DEGREES, subsonus_track_packet.height);
+            //printf("\tRange = %f, Azimuth = %f, Elevation = %f\n", subsonus_track_packet.range, subsonus_track_packet.azimuth * RADIANS_TO_DEGREES, subsonus_track_packet.elevation * RADIANS_TO_DEGREES);
+            //this->track_callback(subsonus_track_packet);
+            //ins_->set_usbl_data(subsonus_track_packet);
+          }
+        }
+        else
+        {
+          //printf("Packet ID %u of Length %u\n", an_packet->id, an_packet->length);
+        }
+
+        /* Ensure that you free the an_packet when your done with it or you will leak memory */
+        an_packet_free(&an_packet);
+      }
+    }
+  }
+
 }
 
 void UroSubsonus::initialize(){
   bytes_received = 0;
   t_wait.tv_sec = 0;
-  t_wait.tv_usec = 100;
+  t_wait.tv_usec = 1000;
   an_decoder_initialise(&an_decoder);
   struct sockaddr_in serveraddr;
-  char *hostname;
-  hostname = "192.168.2.32";
-  int port = atoi("16718");
+  char *surface_ip;
+  surface_ip = "192.168.2.32";
+  int surface_port = atoi("16718");
+  char *subsea_ip;
+  subsea_ip = "192.168.2.33";
+  int subsea_port = atoi("16718");
 
 #ifdef _WIN32
   WSADATA wsaData;
@@ -236,18 +312,19 @@ void UroSubsonus::initialize(){
 #endif
 
   struct hostent *server;
-  tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
-  if(tcp_socket < 0)
+  tcp_socket_surface = socket(AF_INET, SOCK_STREAM, 0);
+  tcp_socket_subsea = socket(AF_INET, SOCK_STREAM, 0);
+  if(tcp_socket_surface < 0)
   {
     printf("Could not open TCP socket\n");
     exit(EXIT_FAILURE);
   }
 
   // Find the address of the host
-  server = gethostbyname(hostname);
+  server = gethostbyname(surface_ip);
   if(server == NULL)
   {
-    printf("Could not find host %s\n", hostname);
+    printf("Could not find host %s\n", surface_ip);
     exit(EXIT_FAILURE);
   }
 
@@ -255,17 +332,32 @@ void UroSubsonus::initialize(){
   memset((char *) &serveraddr, 0, sizeof(serveraddr));
   serveraddr.sin_family = AF_INET;
   memcpy((char *) &serveraddr.sin_addr.s_addr, (char *) server->h_addr_list[0], server->h_length);
-  serveraddr.sin_port = htons(port);
+  serveraddr.sin_port = htons(surface_port);
 
   // Connect to the server
-  if(connect(tcp_socket, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)
+  if(connect(tcp_socket_surface, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)
   {
-    printf("Could not connect to server\n");
+    printf("Could not connect to server of surface\n");
   }
+  
+  server = gethostbyname(subsea_ip);
+  memset((char *) &serveraddr, 0, sizeof(serveraddr));
+  serveraddr.sin_family = AF_INET;
+  memcpy((char *) &serveraddr.sin_addr.s_addr, (char *) server->h_addr_list[0], server->h_length);
+  serveraddr.sin_port = htons(subsea_port);
+
+  // Connect to the server
+  if(connect(tcp_socket_subsea, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)
+  {
+    printf("Could not connect to server subsea\n");
+  }
+
+
 
   // Flush the socket
   {
-    int flush_length = 0;
+    int flush_length_surface = 0;
+    int flush_length_subsea = 0;
     while(1)
     {
       struct timeval t;
@@ -274,14 +366,28 @@ void UroSubsonus::initialize(){
       t.tv_usec = 50000;
       unsigned char buf[1024];
       FD_ZERO(&readfds);
-      FD_SET(tcp_socket, &readfds);
-      select(tcp_socket + 1, &readfds, NULL, NULL, &t);
-      if(FD_ISSET(tcp_socket, &readfds))
+      FD_SET(tcp_socket_surface, &readfds);
+      FD_SET(tcp_socket_subsea, &readfds);
+      int max_fd = std::max(tcp_socket_surface, tcp_socket_subsea);
+      int result = select(max_fd + 1, &readfds, NULL, NULL, &t_wait);
+      if (result < 0) {
+          printf("select error");
+      }
+      //select(tcp_socket_surface + 1, &readfds, NULL, NULL, &t);
+      //select(tcp_socket_subsea + 1, &readfds, NULL, NULL, &t);
+      if(FD_ISSET(tcp_socket_surface, &readfds))
       {
-        flush_length = recv(tcp_socket, buf, sizeof(buf), 0);
-        if(flush_length < 100)
+        flush_length_surface = recv(tcp_socket_surface, buf, sizeof(buf), 0);
+        if(flush_length_surface < 100)
         {
-          break;
+          if(FD_ISSET(tcp_socket_subsea, &readfds))
+          {
+            flush_length_subsea = recv(tcp_socket_subsea, buf, sizeof(buf), 0);
+            if(flush_length_subsea < 100)
+            {
+              break;
+            }
+          }
         }
       }
       else

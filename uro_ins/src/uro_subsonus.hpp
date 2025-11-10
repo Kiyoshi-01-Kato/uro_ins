@@ -84,7 +84,8 @@ class UroSubsonus
   #ifdef _WIN32
     SOCKET top_socket;
   #else
-    int tcp_socket;
+    int tcp_socket_surface;
+    int tcp_socket_subsea;
   #endif
 
     unsigned int bytes_received;
@@ -95,7 +96,8 @@ class UroSubsonus
     an_decoder_t an_decoder;
     an_packet_t *an_packet;
 
-    subsonus_system_state_packet_t system_state_packet;
+    subsonus_system_state_packet_t surface_system_state_packet;
+    subsonus_system_state_packet_t subsea_system_state_packet;
     subsonus_track_packet_t subsonus_track_packet;
 
     //rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr subsonus_publisher_;

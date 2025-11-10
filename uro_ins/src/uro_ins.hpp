@@ -128,6 +128,7 @@ class UroIns : public rclcpp::Node
     geometry_msgs::msg::TransformStamped usbl_tf;
 
     subsonus_system_state_packet_t surface_;
+    //subsonus_system_state_packet_t subsea_;
     subsonus_track_packet_t subsea_;
     subsonus_track_packet_t subsea_old_;
     geometry_msgs::msg::Point dvl_pose_;
