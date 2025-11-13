@@ -113,19 +113,18 @@ UroSubsonus::UroSubsonus(std::shared_ptr<UroIns> ins) : ins_(ins) {}
 
 void UroSubsonus::receive_subsonus(){
   
-  /*
+
   //プログラム確認用(実運用時コメントアウト)
   static int i = 0;
-  system_state_packet = {};
-  subsonus_track_packet = {};
 
-  system_state_packet.latitude        = (35 - i%10000 * 0.00000001) *  DEGREES_TO_RADIANS;
-  system_state_packet.longitude       = (139 + i%10000 * 0.00000001) * DEGREES_TO_RADIANS;
-  system_state_packet.height          = 0 + i%10000 * 0.0001;
-  system_state_packet.orientation[0]  = (0 + i%10000 * 0.0001) * DEGREES_TO_RADIANS;
-  system_state_packet.orientation[1]  = (0 - i%10000 * 0.0001) * DEGREES_TO_RADIANS;
-  system_state_packet.orientation[2]  = (0 + i%10000 * 0.01) * DEGREES_TO_RADIANS;
-    ins_->set_ship_data(system_state_packet);
+  surface_system_state_packet.latitude        = (35 - i%10000 * 0.00000001) *  DEGREES_TO_RADIANS;
+  surface_system_state_packet.longitude       = (139 + i%10000 * 0.00000001) * DEGREES_TO_RADIANS;
+  surface_system_state_packet.height          = 0 + i%10000 * 0.0001;
+  surface_system_state_packet.orientation[0]  = (0 + i%10000 * 0.0001) * DEGREES_TO_RADIANS;
+  surface_system_state_packet.orientation[1]  = (0 - i%10000 * 0.0001) * DEGREES_TO_RADIANS;
+  surface_system_state_packet.orientation[2]  = (0 + i%10000 * 0.01) * DEGREES_TO_RADIANS;
+  ins_->set_ship_data(surface_system_state_packet);
+
   if (i%200 == 0){
     subsonus_track_packet.observer_unix_time_seconds = i/50;
     subsonus_track_packet.observer_microseconds = i/50;
@@ -144,11 +143,21 @@ void UroSubsonus::receive_subsonus(){
       ins_->set_usbl_data(subsonus_track_packet);
     }
   }
+  /*
+  subsea_system_state_packet.latitude        = (35 + i%10000 * 0.00000002) *  DEGREES_TO_RADIANS;
+  subsea_system_state_packet.longitude       = (139 - i%10000 * 0.00000004) * DEGREES_TO_RADIANS;
+  subsea_system_state_packet.height          = 0 + i%10000 * 0.0003;
+  subsea_system_state_packet.orientation[0]  = (0 - i%10000 * 0.0004) * DEGREES_TO_RADIANS;
+  subsea_system_state_packet.orientation[1]  = (0 + i%10000 * 0.0007) * DEGREES_TO_RADIANS;
+  subsea_system_state_packet.orientation[2]  = (0 - i%10000 * 0.06) * DEGREES_TO_RADIANS;
+  ins_->set_subsea_data(subsea_system_state_packet);
+  */
+
   if (i > 1000000){
     i = 0;
   }
   i = i + 1;
-  */
+  
 
   FD_ZERO(&readfds);
   if (tcp_socket_surface >= 0) FD_SET(tcp_socket_surface, &readfds);
@@ -402,6 +411,10 @@ void UroSubsonus::initialize(){
       }
     }
   }
+
+  surface_system_state_packet = {};
+  surface_system_state_packet = {};
+  subsea_system_state_packet = {};
   
   printf("Encode Network Settings Packet:\n");
   //set_network_options();

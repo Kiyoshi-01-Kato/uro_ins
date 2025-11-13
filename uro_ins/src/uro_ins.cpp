@@ -110,7 +110,7 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
   auto ins = std::make_shared<UroIns>();
   auto usbl = std::make_shared<UroSubsonus>(ins);
-  usbl->initialize();
+  //usbl->initialize(); //机上確認ではコメントアウトする
   ins->initialize();
   ins->set_subsonus(usbl);
   rclcpp::spin(ins);
