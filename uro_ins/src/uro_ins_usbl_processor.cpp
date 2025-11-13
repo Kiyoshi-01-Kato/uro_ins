@@ -589,7 +589,7 @@ void UroIns::publish_log_data()
   usbl_data.map2ship.position.x = ship_tf.transform.translation.x;
   usbl_data.map2ship.position.y = - ship_tf.transform.translation.y;
   usbl_data.map2ship.position.z = acoustic_position_.observer_depth;
-  quat.setRPY(surface_.orientation[0] * RADIANS_TO_DEGREES, surface_.orientation[1] * RADIANS_TO_DEGREES, surface_.orientation[2] * RADIANS_TO_DEGREES);
+  quat.setRPY(surface_.orientation[0], surface_.orientation[1], surface_.orientation[2]);
   usbl_data.map2ship.orientation.x = quat.x();
   usbl_data.map2ship.orientation.y = quat.y();
   usbl_data.map2ship.orientation.z = quat.z();
