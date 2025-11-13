@@ -84,7 +84,8 @@ class UroIns : public rclcpp::Node
     void initialize();
     void set_subsonus(std::shared_ptr<UroSubsonus> usbl);
     void set_ship_data(subsonus_system_state_packet_t surface);
-    void set_usbl_data(subsonus_track_packet_t subsea);
+    void set_usbl_data(subsonus_track_packet_t usbl);
+    void set_subsea_data(subsonus_system_state_packet_t subsea);
 
   private:
     void tf_init(std::string frame_name);
@@ -128,11 +129,13 @@ class UroIns : public rclcpp::Node
     geometry_msgs::msg::TransformStamped usbl_tf;
 
     subsonus_system_state_packet_t surface_;
-    //subsonus_system_state_packet_t subsea_;
-    subsonus_track_packet_t subsea_;
-    subsonus_track_packet_t subsea_old_;
+    subsonus_system_state_packet_t subsea_;
+    subsonus_system_state_packet_t subsea_old_;
+    subsonus_track_packet_t acoustic_position_;
+    subsonus_track_packet_t acoustic_position_old_;
     geometry_msgs::msg::Point dvl_pose_;
     float usbl_from_map_xyz[3];
+    bool is_subsea_connected;   //Subsea球体との通信フラグ
     bool is_ship_data_received; //GNSS Compass(subsonus(surface))データ受信フラグ
     bool is_usbl_data_received; //音響測位データ受信フラグ
     bool is_map_latlon_loaded;  //mapフレームの緯度経度取得フラグ
@@ -141,6 +144,7 @@ class UroIns : public rclcpp::Node
     float map_origin_lat;       //map原点の緯度
     float map_origin_lon;       //map原点の経度
     float map_origin_h;         //map原点の高度
+    int subsea_connect_count;   //前回subsea球体受信からのカウント
     int ship_marker_count;      //前回shipマーカー描画からのカウント
     int usbl_marker_count;      //前回usblマーカー描画からのカウント
     float bottom_track_fom[3];  //DVLの対地速度（bottom track）のFOM

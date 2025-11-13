@@ -73,13 +73,13 @@ UroIns::UroIns() : Node("ins_node")
     std::bind(&UroIns::usbl_on_timer, this)
   );
 
-  //ship描画
+  //描画
   timer_publish_marker_ = this->create_wall_timer(
     200ms, 
     std::bind(&UroIns::publish_marker, this)
   );
 
-
+  is_subsea_connected = false;
   is_ship_data_received = false;
   is_usbl_data_received = false;
   is_map_latlon_loaded = false;
@@ -88,6 +88,7 @@ UroIns::UroIns() : Node("ins_node")
   map_origin_lat = 0.0;
   map_origin_lon = 0.0;
   map_origin_h = 0.0;
+  subsea_connect_count = 0;
   ship_marker_count = 0;
   usbl_marker_count = 0;
   gnss_point_num = 0;
@@ -95,6 +96,8 @@ UroIns::UroIns() : Node("ins_node")
   surface_ = {};
   subsea_ = {};
   subsea_old_ = {};
+  acoustic_position_ = {};
+  acoustic_position_old_ = {};
   std::fill(std::begin(usbl_from_map_xyz), std::end(usbl_from_map_xyz), 0);
   std::fill(std::begin(bottom_track_fom), std::end(bottom_track_fom), 10);
 }
