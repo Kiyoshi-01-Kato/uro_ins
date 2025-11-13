@@ -113,7 +113,7 @@ UroSubsonus::UroSubsonus(std::shared_ptr<UroIns> ins) : ins_(ins) {}
 
 void UroSubsonus::receive_subsonus(){
   
-
+/*
   //プログラム確認用(実運用時コメントアウト)
   static int i = 0;
 
@@ -143,7 +143,7 @@ void UroSubsonus::receive_subsonus(){
       ins_->set_usbl_data(subsonus_track_packet);
     }
   }
-  /*
+  
   subsea_system_state_packet.latitude        = (35 + i%10000 * 0.00000002) *  DEGREES_TO_RADIANS;
   subsea_system_state_packet.longitude       = (139 - i%10000 * 0.00000004) * DEGREES_TO_RADIANS;
   subsea_system_state_packet.height          = 0 + i%10000 * 0.0003;
@@ -151,13 +151,13 @@ void UroSubsonus::receive_subsonus(){
   subsea_system_state_packet.orientation[1]  = (0 + i%10000 * 0.0007) * DEGREES_TO_RADIANS;
   subsea_system_state_packet.orientation[2]  = (0 - i%10000 * 0.06) * DEGREES_TO_RADIANS;
   ins_->set_subsea_data(subsea_system_state_packet);
-  */
+  
 
   if (i > 1000000){
     i = 0;
   }
   i = i + 1;
-  
+  */
 
   FD_ZERO(&readfds);
   if (tcp_socket_surface >= 0) FD_SET(tcp_socket_surface, &readfds);
