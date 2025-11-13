@@ -587,7 +587,7 @@ void UroIns::publish_log_data()
   usbl_data.ship_geopoint.longitude = surface_.longitude * RADIANS_TO_DEGREES;
   usbl_data.ship_geopoint.altitude = surface_.height;
   usbl_data.map2ship.position.x = ship_tf.transform.translation.x;
-  usbl_data.map2ship.position.y = - ship_tf.transform.translation.y;
+  usbl_data.map2ship.position.y = ship_tf.transform.translation.y;
   usbl_data.map2ship.position.z = acoustic_position_.observer_depth;
   quat.setRPY(surface_.orientation[0], surface_.orientation[1], surface_.orientation[2]);
   usbl_data.map2ship.orientation.x = quat.x();
@@ -609,7 +609,7 @@ void UroIns::publish_log_data()
   usbl_data.usbl_geopoint.longitude = lon_usbl;
   usbl_data.usbl_geopoint.altitude = h_usbl;
   usbl_data.map2usbl.position.x = usbl_tf.transform.translation.x;
-  usbl_data.map2usbl.position.y = - usbl_tf.transform.translation.y;
+  usbl_data.map2usbl.position.y = usbl_tf.transform.translation.y;
   usbl_data.map2usbl.position.z = acoustic_position_.depth;
   tf2::Quaternion quat_usbl;
   float roll, pitch, yaw;
@@ -623,7 +623,7 @@ void UroIns::publish_log_data()
     yaw = 0.0;
   }
   //orientation[0] = (is_subsea_connected == true) ? subsea_.orientation : [0.0, 0.0, 0.0];
-  quat_usbl.setRPY(roll, - pitch, - yaw);
+  quat_usbl.setRPY(roll, pitch, yaw);
   usbl_data.map2usbl.orientation.x = quat_usbl.x();
   usbl_data.map2usbl.orientation.y = quat_usbl.y();
   usbl_data.map2usbl.orientation.z = quat_usbl.z();
