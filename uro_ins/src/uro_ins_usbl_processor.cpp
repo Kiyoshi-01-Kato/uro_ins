@@ -611,7 +611,6 @@ void UroIns::publish_log_data()
   usbl_data.map2usbl.position.x = usbl_tf.transform.translation.x;
   usbl_data.map2usbl.position.y = usbl_tf.transform.translation.y;
   usbl_data.map2usbl.position.z = acoustic_position_.depth;
-  tf2::Quaternion quat_usbl;
   float roll, pitch, yaw;
   if (is_subsea_connected == true){
     roll  = subsea_.orientation[0];
@@ -623,14 +622,18 @@ void UroIns::publish_log_data()
     yaw = 0.0;
   }
   //orientation[0] = (is_subsea_connected == true) ? subsea_.orientation : [0.0, 0.0, 0.0];
-  quat_usbl.setRPY(roll, pitch, yaw);
-  usbl_data.map2usbl.orientation.x = quat_usbl.x();
-  usbl_data.map2usbl.orientation.y = quat_usbl.y();
-  usbl_data.map2usbl.orientation.z = quat_usbl.z();
-  usbl_data.map2usbl.orientation.w = quat_usbl.w();
-  usbl_data.ship2usbl.x = acoustic_position_.ned_position[0];
-  usbl_data.ship2usbl.y = acoustic_position_.ned_position[1];
-  usbl_data.ship2usbl.z = acoustic_position_.ned_position[2];
+  quat.setRPY(roll, pitch, yaw);
+  usbl_data.map2usbl.orientation.x = quat.x();
+  usbl_data.map2usbl.orientation.y = quat.y();
+  usbl_data.map2usbl.orientation.z = quat.z();
+  usbl_data.map2usbl.orientation.w = quat.w();
+  usbl_data.ship2usbl.position.x = acoustic_position_.ned_position[0];
+  usbl_data.ship2usbl.position.y = acoustic_position_.ned_position[1];
+  usbl_data.ship2usbl.position.z = acoustic_position_.ned_position[2];
+  usbl_data.ship2usbl.orientation.x = 0;
+  usbl_data.ship2usbl.orientation.y = 0;
+  usbl_data.ship2usbl.orientation.z = 0;
+  usbl_data.ship2usbl.orientation.w = 1;
   usbl_data.range = acoustic_position_.range;
   usbl_data.azimuth = acoustic_position_.azimuth * RADIANS_TO_DEGREES;
   usbl_data.elevation = acoustic_position_.elevation * RADIANS_TO_DEGREES;
@@ -649,19 +652,32 @@ void UroIns::publish_log_data()
   ins_data.odom_geopoint.latitude = lat;
   ins_data.odom_geopoint.longitude = lon;
   ins_data.odom_geopoint.altitude = h;
-  ins_data.map2odom.x = odom_tf.transform.translation.x;
-  ins_data.map2odom.y = odom_tf.transform.translation.y;
-  ins_data.map2odom.z = odom_tf.transform.translation.z;
+  ins_data.map2odom.position.x = odom_tf.transform.translation.x;
+  ins_data.map2odom.position.y = odom_tf.transform.translation.y;
+  ins_data.map2odom.position.z = odom_tf.transform.translation.z;
+  ins_data.map2odom.orientation.x = 0;
+  ins_data.map2odom.orientation.y = 0;
+  ins_data.map2odom.orientation.z = 0;
+  ins_data.map2odom.orientation.w = 1;
   prij.Reverse(- (odom_tf.transform.translation.y + dvl_pose_.y), odom_tf.transform.translation.x + dvl_pose_.x, odom_tf.transform.translation.z + dvl_pose_.z, lat, lon, h); //この入力はxが東、yが北
   ins_data.baselink_geopoint.latitude = lat;
   ins_data.baselink_geopoint.longitude = lon;
   ins_data.baselink_geopoint.altitude = h;
-  ins_data.map2baselink.x = odom_tf.transform.translation.x + dvl_pose_.x;
-  ins_data.map2baselink.y = odom_tf.transform.translation.y + dvl_pose_.y;
-  ins_data.map2baselink.z = odom_tf.transform.translation.z + dvl_pose_.z;
-  ins_data.odom2baselink.x = dvl_pose_.x;
-  ins_data.odom2baselink.y = dvl_pose_.y;
-  ins_data.odom2baselink.z = dvl_pose_.z;
+  ins_data.map2baselink.position.x = odom_tf.transform.translation.x + dvl_pose_.x;
+  ins_data.map2baselink.position.y = odom_tf.transform.translation.y + dvl_pose_.y;
+  ins_data.map2baselink.position.z = odom_tf.transform.translation.z + dvl_pose_.z;
+  quat.setRPY(roll, - pitch, - yaw);
+  ins_data.map2baselink.orientation.x = quat.x();
+  ins_data.map2baselink.orientation.y = quat.y();
+  ins_data.map2baselink.orientation.z = quat.z();
+  ins_data.map2baselink.orientation.w = quat.w();
+  ins_data.odom2baselink.position.x = dvl_pose_.x;
+  ins_data.odom2baselink.position.y = dvl_pose_.y;
+  ins_data.odom2baselink.position.z = dvl_pose_.z;
+  ins_data.odom2baselink.orientation.x = 0;
+  ins_data.odom2baselink.orientation.y = 0;
+  ins_data.odom2baselink.orientation.z = 0;
+  ins_data.odom2baselink.orientation.w = 1;
   ins_data_->publish(ins_data);
 
   auto from_ship_to_rov_dvl = std_msgs::msg::Float32();

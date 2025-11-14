@@ -7,7 +7,7 @@ geometry_msgs/Pose map2ship
 
 geographic_msgs/GeoPoint usbl_geopoint
 geometry_msgs/Pose map2usbl
-geometry_msgs/Point ship2usbl
+geometry_msgs/Pose ship2usbl
 float64 range
 float64 azimuth
 float64 elevation
