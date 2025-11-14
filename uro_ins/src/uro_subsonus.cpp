@@ -413,7 +413,7 @@ void UroSubsonus::initialize(){
   }
 
   surface_system_state_packet = {};
-  surface_system_state_packet = {};
+  subsonus_track_packet = {};
   subsea_system_state_packet = {};
   
   printf("Encode Network Settings Packet:\n");
