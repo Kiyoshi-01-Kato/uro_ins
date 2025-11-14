@@ -201,10 +201,10 @@ void UroSubsonus::receive_subsonus(){
         /* this allows easy access to all the different values             */
         if(decode_subsonus_system_state_packet(&surface_system_state_packet, an_packet) == 0)
         {
-          printf("Surface Subsonus System State Packet:\n");
+          //printf("Surface Subsonus System State Packet:\n");
           //printf("Subsonus System State Packet:\n");
-          printf("\tLatitude = %f, Longitude = %f, Height = %f\n", surface_system_state_packet.latitude * RADIANS_TO_DEGREES, surface_system_state_packet.longitude * RADIANS_TO_DEGREES, surface_system_state_packet.height);
-          printf("\tRoll = %f, Pitch = %f, Heading = %f\n", surface_system_state_packet.orientation[0] * RADIANS_TO_DEGREES, surface_system_state_packet.orientation[1] * RADIANS_TO_DEGREES, surface_system_state_packet.orientation[2] * RADIANS_TO_DEGREES);
+          //printf("\tLatitude = %f, Longitude = %f, Height = %f\n", surface_system_state_packet.latitude * RADIANS_TO_DEGREES, surface_system_state_packet.longitude * RADIANS_TO_DEGREES, surface_system_state_packet.height);
+          //printf("\tRoll = %f, Pitch = %f, Heading = %f\n", surface_system_state_packet.orientation[0] * RADIANS_TO_DEGREES, surface_system_state_packet.orientation[1] * RADIANS_TO_DEGREES, surface_system_state_packet.orientation[2] * RADIANS_TO_DEGREES);
           ins_->set_ship_data(surface_system_state_packet);
         }
       }
@@ -261,10 +261,10 @@ void UroSubsonus::receive_subsonus(){
         /* this allows easy access to all the different values             */
         if(decode_subsonus_system_state_packet(&subsea_system_state_packet, an_packet) == 0)
         {
-          printf("Subsea Subsonus System State Packet:\n");
+          //printf("Subsea Subsonus System State Packet:\n");
           //printf("Subsonus System State Packet:\n");
-          printf("\tLatitude = %f, Longitude = %f, Height = %f\n", subsea_system_state_packet.latitude * RADIANS_TO_DEGREES, subsea_system_state_packet.longitude * RADIANS_TO_DEGREES, subsea_system_state_packet.height);
-          printf("\tRoll = %f, Pitch = %f, Heading = %f\n", subsea_system_state_packet.orientation[0] * RADIANS_TO_DEGREES, subsea_system_state_packet.orientation[1] * RADIANS_TO_DEGREES, subsea_system_state_packet.orientation[2] * RADIANS_TO_DEGREES);
+          //printf("\tLatitude = %f, Longitude = %f, Height = %f\n", subsea_system_state_packet.latitude * RADIANS_TO_DEGREES, subsea_system_state_packet.longitude * RADIANS_TO_DEGREES, subsea_system_state_packet.height);
+          //printf("\tRoll = %f, Pitch = %f, Heading = %f\n", subsea_system_state_packet.orientation[0] * RADIANS_TO_DEGREES, subsea_system_state_packet.orientation[1] * RADIANS_TO_DEGREES, subsea_system_state_packet.orientation[2] * RADIANS_TO_DEGREES);
           ins_->set_subsea_data(subsea_system_state_packet);
         }
       }
