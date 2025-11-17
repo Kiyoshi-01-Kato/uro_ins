@@ -264,8 +264,8 @@ void UroIns::draw_ship()
   marker_ship.lifetime.nanosec = 0;
 
   marker_ship.scale.x = 0.5;
-  float length = 23.36;
-  float width = 5.4;                //右舷取り付け：正、左舷取り付け：負
+  float length = 21.0;
+  float width = - 4.8;                //右舷取り付け：正、左舷取り付け：負
   float tip_to_surface = length/2;  //船の先端からsurfaceまでの距離[m]
   geometry_msgs::msg::Point point;
   point.x = 0;
