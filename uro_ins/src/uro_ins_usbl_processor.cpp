@@ -63,11 +63,11 @@ void UroIns::set_ship_data(subsonus_system_state_packet_t surface)
   is_ship_data_received = true;
 }
 
-void UroIns::set_usbl_data(subsonus_track_packet_t acoustic_position)
+void UroIns::set_track_data(subsonus_track_packet_t track)
 {
-  acoustic_position_old_ = acoustic_position_;
-  acoustic_position_ = acoustic_position;
-  is_usbl_data_received = true;
+  track_old_ = track_;
+  track_ = track;
+  is_track_data_received = true;
 }
 
 void UroIns::set_subsea_data(subsonus_system_state_packet_t subsea)
@@ -156,7 +156,7 @@ void UroIns::publish_marker()
     }
   
   is_ship_data_received = false;
-  is_usbl_data_received = false;
+  is_track_data_received = false;
 
   }
   
@@ -184,19 +184,19 @@ void UroIns::evaluate_usbl_reliability()
   }
 
   usbl_marker_count++;
-  if (is_usbl_data_received == false){
+  if (is_track_data_received == false){
     if (usbl_marker_count >= 100){
       usbl_reliability_level = 1;
     }
     return;
   }
 
-  int elapsed_sec = acoustic_position_.observer_unix_time_seconds - acoustic_position_old_.observer_unix_time_seconds;
-  int elapsed_us = acoustic_position_.observer_microseconds - acoustic_position_old_.observer_microseconds;
+  int elapsed_sec = track_.observer_unix_time_seconds - track_old_.observer_unix_time_seconds;
+  int elapsed_us = track_.observer_microseconds - track_old_.observer_microseconds;
   float elapsed_time = elapsed_sec + elapsed_us * 0.001 * 0.001;
 
-  float diff_x = acoustic_position_.ned_position[0] - acoustic_position_old_.ned_position[0];
-  float diff_y = acoustic_position_.ned_position[1] - acoustic_position_old_.ned_position[1];
+  float diff_x = track_.ned_position[0] - track_old_.ned_position[0];
+  float diff_y = track_.ned_position[1] - track_old_.ned_position[1];
   float diff_distance = sqrt((diff_x * diff_x) + (diff_y * diff_y));
 
   float v_limit = 1.54332;  //3knot
@@ -212,7 +212,7 @@ void UroIns::evaluate_usbl_reliability()
   }
 
   usbl_marker_count = 0;  //USBL正常
-  float elevation_deg = acoustic_position_.elevation * RADIANS_TO_DEGREES;
+  float elevation_deg = track_.elevation * RADIANS_TO_DEGREES;
   if (elevation_deg > 75){
     usbl_reliability_level = 3;
     return;
@@ -326,14 +326,14 @@ void UroIns::broadcast_usbl_tf()
     h = subsea_.height;
   }
   else{
-    lat = acoustic_position_.latitude * RADIANS_TO_DEGREES;
-    lon = acoustic_position_.longitude * RADIANS_TO_DEGREES;
-    h = acoustic_position_.height;
+    lat = track_.latitude * RADIANS_TO_DEGREES;
+    lon = track_.longitude * RADIANS_TO_DEGREES;
+    h = track_.height;
   }
   prij.Forward(lat, lon, h, x, y, z);
   usbl_from_map_xyz[0] = y;    //この出力はxが東、yが北
   usbl_from_map_xyz[1] = - x;  //この出力はxが東、yが北
-  usbl_from_map_xyz[2] = - acoustic_position_.depth;
+  usbl_from_map_xyz[2] = - track_.depth;
   auto now = this->get_clock()->now();
   usbl_tf.header.stamp = now;
   usbl_tf.transform.translation.x = usbl_from_map_xyz[0];
@@ -578,107 +578,122 @@ void UroIns::set_gnss_point(const std::shared_ptr<uro_ins_msgs::srv::SetGnssPoin
 void UroIns::publish_log_data()
 {
   tf2::Quaternion quat;
+  LocalCartesian prij(map_origin_lat, map_origin_lon, map_origin_h);
+  double lat, lon, h, x, y, z;
   rclcpp::Time current_time = this->now();
 
-  auto usbl_data = uro_ins_msgs::msg::UsblData();
-  usbl_data.header.frame_id = "usbl";
-  usbl_data.header.stamp = current_time;
-  usbl_data.ship_geopoint.latitude = surface_.latitude * RADIANS_TO_DEGREES;
-  usbl_data.ship_geopoint.longitude = surface_.longitude * RADIANS_TO_DEGREES;
-  usbl_data.ship_geopoint.altitude = surface_.height;
-  usbl_data.map2ship.position.x = ship_tf.transform.translation.x;
-  usbl_data.map2ship.position.y = ship_tf.transform.translation.y;
-  usbl_data.map2ship.position.z = acoustic_position_.observer_depth;
+  auto usbl_surface = uro_ins_msgs::msg::UsblSurface();
+  usbl_surface.header.frame_id = "usbl_surface";
+  usbl_surface.header.stamp.sec = surface_.unix_time_seconds;
+  usbl_surface.header.stamp.nanosec = surface_.microseconds * 1000;
+  usbl_surface.ship_geopoint.latitude = surface_.latitude * RADIANS_TO_DEGREES;
+  usbl_surface.ship_geopoint.longitude = surface_.longitude * RADIANS_TO_DEGREES;
+  usbl_surface.ship_geopoint.altitude = surface_.height;
+  usbl_surface.map2ship.position.x = ship_tf.transform.translation.x;
+  usbl_surface.map2ship.position.y = ship_tf.transform.translation.y;
+  usbl_surface.map2ship.position.z = track_.observer_depth;
   quat.setRPY(surface_.orientation[0], surface_.orientation[1], surface_.orientation[2]);
-  usbl_data.map2ship.orientation.x = quat.x();
-  usbl_data.map2ship.orientation.y = quat.y();
-  usbl_data.map2ship.orientation.z = quat.z();
-  usbl_data.map2ship.orientation.w = quat.w();
-  double lat_usbl, lon_usbl, h_usbl;
+  usbl_surface.map2ship.orientation.x = quat.x();
+  usbl_surface.map2ship.orientation.y = quat.y();
+  usbl_surface.map2ship.orientation.z = quat.z();
+  usbl_surface.map2ship.orientation.w = quat.w();
+  usbl_surface.surface_maximum_temperature_shutdown_alarm  = surface_.system_status.b.maximum_temperature_shutdown_alarm;
+  usbl_surface.surface_aiding_gnss_time_sync_alarm         = surface_.system_status.b.aiding_gnss_time_sync_alarm;
+  usbl_surface.surface_gnss_fix_type                       = surface_.filter_status.b.gnss_fix_type;
+  usbl_surface_->publish(usbl_surface);
+
+  auto usbl_subsea = uro_ins_msgs::msg::UsblSubsea();
+  usbl_subsea.header.frame_id = "usbl_subsea";
+  usbl_subsea.header.stamp.sec = subsea_.unix_time_seconds;
+  usbl_subsea.header.stamp.nanosec = subsea_.microseconds * 1000;
+  usbl_subsea.usbl_geopoint.latitude = subsea_.latitude * RADIANS_TO_DEGREES;
+  usbl_subsea.usbl_geopoint.longitude = subsea_.longitude * RADIANS_TO_DEGREES;
+  usbl_subsea.usbl_geopoint.altitude = subsea_.height;
+  prij.Forward(subsea_.latitude * RADIANS_TO_DEGREES, subsea_.longitude * RADIANS_TO_DEGREES, subsea_.height, x, y, z);
+  usbl_subsea.map2usbl.position.x = y;  //この出力はxが東、yが北
+  usbl_subsea.map2usbl.position.y = x;  //この出力はxが東、yが北
+  usbl_subsea.map2usbl.position.z = track_.depth;
+  quat.setRPY(subsea_.orientation[0], subsea_.orientation[1], subsea_.orientation[2]);
+  usbl_subsea.map2usbl.orientation.x = quat.x();
+  usbl_subsea.map2usbl.orientation.y = quat.y();
+  usbl_subsea.map2usbl.orientation.z = quat.z();
+  usbl_subsea.map2usbl.orientation.w = quat.w();
+  usbl_subsea.subsea_maximum_temperature_shutdown_alarm = subsea_.system_status.b.maximum_temperature_shutdown_alarm;
+  usbl_subsea.subsea_aiding_gnss_time_sync_alarm        = subsea_.system_status.b.aiding_gnss_time_sync_alarm;
+  usbl_subsea.subsea_gnss_fix_type                      = subsea_.filter_status.b.gnss_fix_type;
+  usbl_subsea.subsea_acoustic_heading_active            = subsea_.filter_status.b.acoustic_heading_active;
+  usbl_subsea.subsea_internal_gnss_enabled              = subsea_.filter_status.b.internal_gnss_enabled;
   if (is_subsea_connected == true){
-    lat_usbl = subsea_.latitude * RADIANS_TO_DEGREES;
-    lon_usbl = subsea_.longitude * RADIANS_TO_DEGREES;
-    h_usbl = subsea_.height;
+    usbl_subsea_->publish(usbl_subsea);
   }
-  else{
-    lat_usbl = acoustic_position_.latitude * RADIANS_TO_DEGREES;
-    lon_usbl = acoustic_position_.longitude * RADIANS_TO_DEGREES;
-    h_usbl = acoustic_position_.height;
-  }
-  usbl_data.usbl_geopoint.latitude = lat_usbl;
-  usbl_data.usbl_geopoint.longitude = lon_usbl;
-  usbl_data.usbl_geopoint.altitude = h_usbl;
-  usbl_data.map2usbl.position.x = usbl_tf.transform.translation.x;
-  usbl_data.map2usbl.position.y = usbl_tf.transform.translation.y;
-  usbl_data.map2usbl.position.z = acoustic_position_.depth;
-  float roll, pitch, yaw;
-  if (is_subsea_connected == true){
-    roll  = subsea_.orientation[0];
-    pitch = subsea_.orientation[1];
-    yaw   = subsea_.orientation[2];
-  }else{
-    roll = 0.0;
-    pitch = 0.0;
-    yaw = 0.0;
-  }
-  //orientation[0] = (is_subsea_connected == true) ? subsea_.orientation : [0.0, 0.0, 0.0];
-  quat.setRPY(roll, pitch, yaw);
-  usbl_data.map2usbl.orientation.x = quat.x();
-  usbl_data.map2usbl.orientation.y = quat.y();
-  usbl_data.map2usbl.orientation.z = quat.z();
-  usbl_data.map2usbl.orientation.w = quat.w();
-  usbl_data.ship2usbl.position.x = acoustic_position_.ned_position[0];
-  usbl_data.ship2usbl.position.y = acoustic_position_.ned_position[1];
-  usbl_data.ship2usbl.position.z = acoustic_position_.ned_position[2];
-  usbl_data.ship2usbl.orientation.x = 0;
-  usbl_data.ship2usbl.orientation.y = 0;
-  usbl_data.ship2usbl.orientation.z = 0;
-  usbl_data.ship2usbl.orientation.w = 1;
-  usbl_data.range = acoustic_position_.range;
-  usbl_data.azimuth = acoustic_position_.azimuth * RADIANS_TO_DEGREES;
-  usbl_data.elevation = acoustic_position_.elevation * RADIANS_TO_DEGREES;
-  usbl_data.usbl_reliability_level = usbl_reliability_level;
-  usbl_data_->publish(usbl_data);
+
+  auto usbl_track = uro_ins_msgs::msg::UsblTrack();
+  usbl_track.header.frame_id = "usbl_track";
+  usbl_track.header.stamp.sec = track_.observer_unix_time_seconds;
+  usbl_track.header.stamp.nanosec = track_.observer_microseconds * 1000;
+  usbl_track.usbl_geopoint.latitude = track_.latitude * RADIANS_TO_DEGREES;
+  usbl_track.usbl_geopoint.longitude = track_.longitude * RADIANS_TO_DEGREES;
+  usbl_track.usbl_geopoint.altitude = track_.height;
+  usbl_track.ship2usbl.position.x = track_.ned_position[0];
+  usbl_track.ship2usbl.position.y = track_.ned_position[1];
+  usbl_track.ship2usbl.position.z = track_.ned_position[2];
+  usbl_track.ship2usbl.orientation.x = 0;
+  usbl_track.ship2usbl.orientation.y = 0;
+  usbl_track.ship2usbl.orientation.z = 0;
+  usbl_track.ship2usbl.orientation.w = 1;
+  prij.Forward(track_.latitude * RADIANS_TO_DEGREES, track_.longitude * RADIANS_TO_DEGREES, track_.height, x, y, z);
+  usbl_track.map2usbl.position.x = y;  //この出力はxが東、yが北
+  usbl_track.map2usbl.position.y = x;  //この出力はxが東、yが北
+  usbl_track.map2usbl.position.z = track_.depth;
+  usbl_track.map2usbl.orientation.x = 0;
+  usbl_track.map2usbl.orientation.y = 0;
+  usbl_track.map2usbl.orientation.z = 0;
+  usbl_track.map2usbl.orientation.w = 1;
+  usbl_track.surface_depth = track_.observer_depth;
+  usbl_track.subsea_acoustic_depth = track_.observer_depth + track_.ned_position[2];
+  usbl_track.range = track_.range;
+  usbl_track.azimuth = track_.azimuth * RADIANS_TO_DEGREES;
+  usbl_track.elevation = track_.elevation * RADIANS_TO_DEGREES;
+  usbl_track_->publish(usbl_track);
   
-  LocalCartesian prij(map_origin_lat, map_origin_lon, map_origin_h);
-  double lat, lon, h;   
-  auto ins_data = uro_ins_msgs::msg::InsData();
-  ins_data.header.frame_id = "ins";
-  ins_data.header.stamp = current_time;
-  ins_data.map_geopoint.latitude = map_origin_lat;
-  ins_data.map_geopoint.longitude = map_origin_lon;
-  ins_data.map_geopoint.altitude = map_origin_h;
+  auto uro_ins = uro_ins_msgs::msg::UroIns();
+  uro_ins.header.frame_id = "ins";
+  uro_ins.header.stamp = current_time;
+  uro_ins.usbl_reliability_level = usbl_reliability_level;
+  uro_ins.map_geopoint.latitude = map_origin_lat;
+  uro_ins.map_geopoint.longitude = map_origin_lon;
+  uro_ins.map_geopoint.altitude = map_origin_h;
   prij.Reverse(- odom_tf.transform.translation.y, odom_tf.transform.translation.x, odom_tf.transform.translation.z, lat, lon, h); //この入力はxが東、yが北
-  ins_data.odom_geopoint.latitude = lat;
-  ins_data.odom_geopoint.longitude = lon;
-  ins_data.odom_geopoint.altitude = h;
-  ins_data.map2odom.position.x = odom_tf.transform.translation.x;
-  ins_data.map2odom.position.y = odom_tf.transform.translation.y;
-  ins_data.map2odom.position.z = odom_tf.transform.translation.z;
-  ins_data.map2odom.orientation.x = 0;
-  ins_data.map2odom.orientation.y = 0;
-  ins_data.map2odom.orientation.z = 0;
-  ins_data.map2odom.orientation.w = 1;
+  uro_ins.odom_geopoint.latitude = lat;
+  uro_ins.odom_geopoint.longitude = lon;
+  uro_ins.odom_geopoint.altitude = h;
+  uro_ins.map2odom.position.x = odom_tf.transform.translation.x;
+  uro_ins.map2odom.position.y = odom_tf.transform.translation.y;
+  uro_ins.map2odom.position.z = odom_tf.transform.translation.z;
+  uro_ins.map2odom.orientation.x = 0;
+  uro_ins.map2odom.orientation.y = 0;
+  uro_ins.map2odom.orientation.z = 0;
+  uro_ins.map2odom.orientation.w = 1;
   prij.Reverse(- (odom_tf.transform.translation.y + dvl_pose_.y), odom_tf.transform.translation.x + dvl_pose_.x, odom_tf.transform.translation.z + dvl_pose_.z, lat, lon, h); //この入力はxが東、yが北
-  ins_data.baselink_geopoint.latitude = lat;
-  ins_data.baselink_geopoint.longitude = lon;
-  ins_data.baselink_geopoint.altitude = h;
-  ins_data.map2baselink.position.x = odom_tf.transform.translation.x + dvl_pose_.x;
-  ins_data.map2baselink.position.y = odom_tf.transform.translation.y + dvl_pose_.y;
-  ins_data.map2baselink.position.z = odom_tf.transform.translation.z + dvl_pose_.z;
-  quat.setRPY(roll, - pitch, - yaw);
-  ins_data.map2baselink.orientation.x = quat.x();
-  ins_data.map2baselink.orientation.y = quat.y();
-  ins_data.map2baselink.orientation.z = quat.z();
-  ins_data.map2baselink.orientation.w = quat.w();
-  ins_data.odom2baselink.position.x = dvl_pose_.x;
-  ins_data.odom2baselink.position.y = dvl_pose_.y;
-  ins_data.odom2baselink.position.z = dvl_pose_.z;
-  ins_data.odom2baselink.orientation.x = 0;
-  ins_data.odom2baselink.orientation.y = 0;
-  ins_data.odom2baselink.orientation.z = 0;
-  ins_data.odom2baselink.orientation.w = 1;
-  ins_data_->publish(ins_data);
+  uro_ins.baselink_geopoint.latitude = lat;
+  uro_ins.baselink_geopoint.longitude = lon;
+  uro_ins.baselink_geopoint.altitude = h;
+  uro_ins.map2baselink.position.x = odom_tf.transform.translation.x + dvl_pose_.x;
+  uro_ins.map2baselink.position.y = odom_tf.transform.translation.y + dvl_pose_.y;
+  uro_ins.map2baselink.position.z = odom_tf.transform.translation.z + dvl_pose_.z;
+  quat.setRPY(subsea_.orientation[0], subsea_.orientation[1], subsea_.orientation[2]);
+  uro_ins.map2baselink.orientation.x = quat.x();
+  uro_ins.map2baselink.orientation.y = quat.y();
+  uro_ins.map2baselink.orientation.z = quat.z();
+  uro_ins.map2baselink.orientation.w = quat.w();
+  uro_ins.odom2baselink.position.x = dvl_pose_.x;
+  uro_ins.odom2baselink.position.y = dvl_pose_.y;
+  uro_ins.odom2baselink.position.z = dvl_pose_.z;
+  uro_ins.odom2baselink.orientation.x = 0;
+  uro_ins.odom2baselink.orientation.y = 0;
+  uro_ins.odom2baselink.orientation.z = 0;
+  uro_ins.odom2baselink.orientation.w = 1;
+  uro_ins_->publish(uro_ins);
 
   auto from_ship_to_rov_dvl = std_msgs::msg::Float32();
   float delta_dvl_x = dvl_pose_.x + odom_tf.transform.translation.x - ship_tf.transform.translation.x;
@@ -687,7 +702,7 @@ void UroIns::publish_log_data()
   from_ship_to_rov_dvl_->publish(from_ship_to_rov_dvl);
 
   auto from_ship_to_rov_usbl = std_msgs::msg::Float32();
-  horizontal_distance_usbl = std::sqrt(std::pow(acoustic_position_.ned_position[0], 2) + std::pow(acoustic_position_.ned_position[1], 2));
+  horizontal_distance_usbl = std::sqrt(std::pow(track_.ned_position[0], 2) + std::pow(track_.ned_position[1], 2));
   from_ship_to_rov_usbl.data = horizontal_distance_usbl;
   from_ship_to_rov_usbl_->publish(from_ship_to_rov_usbl);
 }

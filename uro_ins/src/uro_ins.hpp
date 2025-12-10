@@ -49,8 +49,10 @@
 #include "interfaces/msg/bottom_track.hpp"
 #include "interfaces/msg/ins.hpp"
 #include "uro_ins_msgs/srv/set_gnss_point.hpp"
-#include "uro_ins_msgs/msg/usbl_data.hpp"
-#include "uro_ins_msgs/msg/ins_data.hpp"
+#include "uro_ins_msgs/msg/usbl_surface.hpp"
+#include "uro_ins_msgs/msg/usbl_subsea.hpp"
+#include "uro_ins_msgs/msg/usbl_track.hpp"
+#include "uro_ins_msgs/msg/uro_ins.hpp"
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -84,7 +86,7 @@ class UroIns : public rclcpp::Node
     void initialize();
     void set_subsonus(std::shared_ptr<UroSubsonus> usbl);
     void set_ship_data(subsonus_system_state_packet_t surface);
-    void set_usbl_data(subsonus_track_packet_t usbl);
+    void set_track_data(subsonus_track_packet_t track);
     void set_subsea_data(subsonus_system_state_packet_t subsea);
 
   private:
@@ -114,10 +116,12 @@ class UroIns : public rclcpp::Node
     rclcpp::TimerBase::SharedPtr timer_publish_marker_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_ship_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_usbl_;
-    rclcpp::Publisher<uro_ins_msgs::msg::UsblData>::SharedPtr usbl_data_;
+    rclcpp::Publisher<uro_ins_msgs::msg::UsblSurface>::SharedPtr usbl_surface_;
+    rclcpp::Publisher<uro_ins_msgs::msg::UsblSubsea>::SharedPtr usbl_subsea_;
+    rclcpp::Publisher<uro_ins_msgs::msg::UsblTrack>::SharedPtr usbl_track_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr from_ship_to_rov_dvl_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr from_ship_to_rov_usbl_;
-    rclcpp::Publisher<uro_ins_msgs::msg::InsData>::SharedPtr ins_data_;
+    rclcpp::Publisher<uro_ins_msgs::msg::UroIns>::SharedPtr uro_ins_;
     rclcpp::Subscription<interfaces::msg::BottomTrack>::SharedPtr bottom_track_;
     rclcpp::Subscription<interfaces::msg::INS>::SharedPtr dvl_posi_; 
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr usbl_position_;
@@ -131,13 +135,13 @@ class UroIns : public rclcpp::Node
     subsonus_system_state_packet_t surface_;
     subsonus_system_state_packet_t subsea_;
     subsonus_system_state_packet_t subsea_old_;
-    subsonus_track_packet_t acoustic_position_;
-    subsonus_track_packet_t acoustic_position_old_;
+    subsonus_track_packet_t track_;
+    subsonus_track_packet_t track_old_;
     geometry_msgs::msg::Point dvl_pose_;
     float usbl_from_map_xyz[3];
     bool is_subsea_connected;   //Subsea球体との通信フラグ
     bool is_ship_data_received; //GNSS Compass(subsonus(surface))データ受信フラグ
-    bool is_usbl_data_received; //音響測位データ受信フラグ
+    bool is_track_data_received; //音響測位データ受信フラグ
     bool is_map_latlon_loaded;  //mapフレームの緯度経度取得フラグ
     bool bt_dvl_received;       //DVLの対地速度（bottom track）取得済みフラグ
     int usbl_reliability_level; //０：未接続、１：未受信、２：速度3knot以上、３：傘の範囲外、４：正常

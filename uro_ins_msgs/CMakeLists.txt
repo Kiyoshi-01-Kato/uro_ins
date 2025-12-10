@@ -26,8 +26,10 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetGnssPoint.srv"
-  "msg/UsblData.msg"
-  "msg/InsData.msg"
+  "msg/UsblSurface.msg"
+  "msg/UsblSubsea.msg"
+  "msg/UsblTrack.msg"
+  "msg/UroIns.msg"
   DEPENDENCIES geographic_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
 )
 

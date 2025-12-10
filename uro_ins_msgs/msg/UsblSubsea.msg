@@ -1,0 +1,11 @@
+# All positions are in the ned coordinate system
+
+std_msgs/Header header
+
+geographic_msgs/GeoPoint usbl_geopoint
+geometry_msgs/Pose map2usbl
+bool subsea_maximum_temperature_shutdown_alarm
+bool subsea_aiding_gnss_time_sync_alarm
+uint32 subsea_gnss_fix_type
+bool subsea_acoustic_heading_active
+bool subsea_internal_gnss_enabled

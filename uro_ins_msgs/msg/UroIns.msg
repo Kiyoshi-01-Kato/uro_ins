@@ -2,6 +2,8 @@
 
 std_msgs/Header header
 
+int32 usbl_reliability_level
+
 geographic_msgs/GeoPoint map_geopoint
 
 geographic_msgs/GeoPoint odom_geopoint

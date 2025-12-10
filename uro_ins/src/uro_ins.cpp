@@ -47,10 +47,12 @@ UroIns::UroIns() : Node("ins_node")
   static_tf_broadcast_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
   marker_ship_ = this->create_publisher<visualization_msgs::msg::Marker>("/ins_node/marker_ship", 10);
   marker_usbl_ = this->create_publisher<visualization_msgs::msg::Marker>("/ins_node/marker_usbl", 10);
-  usbl_data_ = this->create_publisher<uro_ins_msgs::msg::UsblData>("/ins_node/usbl_data", 10);
+  usbl_surface_ = this->create_publisher<uro_ins_msgs::msg::UsblSurface>("/ins_node/usbl_surface", 10);
+  usbl_subsea_ = this->create_publisher<uro_ins_msgs::msg::UsblSubsea>("/ins_node/usbl_subsea", 10);
+  usbl_track_ = this->create_publisher<uro_ins_msgs::msg::UsblTrack>("/ins_node/usbl_track", 10);
   from_ship_to_rov_dvl_ = this->create_publisher<std_msgs::msg::Float32>("/ins_node/horizontal_distance_ship_rov_dvl", 10);
   from_ship_to_rov_usbl_ = this->create_publisher<std_msgs::msg::Float32>("/ins_node/horizontal_distance_ship_rov_usbl", 10);
-  ins_data_ = this->create_publisher<uro_ins_msgs::msg::InsData>("/ins_node/ins_data", 10);
+  uro_ins_ = this->create_publisher<uro_ins_msgs::msg::UroIns>("/ins_node/uro_ins", 10);
 
   //Nucleusのパケット取得
   bottom_track_ = this->create_subscription<interfaces::msg::BottomTrack>(
@@ -81,7 +83,7 @@ UroIns::UroIns() : Node("ins_node")
 
   is_subsea_connected = false;
   is_ship_data_received = false;
-  is_usbl_data_received = false;
+  is_track_data_received = false;
   is_map_latlon_loaded = false;
   bt_dvl_received = false;
   usbl_reliability_level = 0;
@@ -93,11 +95,15 @@ UroIns::UroIns() : Node("ins_node")
   usbl_marker_count = 0;
   gnss_point_num = 0;
   horizontal_distance_usbl = 0.0;
+  ship_tf = {};
+  odom_tf = {};
+  usbl_tf = {};
   surface_ = {};
   subsea_ = {};
   subsea_old_ = {};
-  acoustic_position_ = {};
-  acoustic_position_old_ = {};
+  track_ = {};
+  track_old_ = {};
+  dvl_pose_ = {};
   std::fill(std::begin(usbl_from_map_xyz), std::end(usbl_from_map_xyz), 0);
   std::fill(std::begin(bottom_track_fom), std::end(bottom_track_fom), 10);
 }

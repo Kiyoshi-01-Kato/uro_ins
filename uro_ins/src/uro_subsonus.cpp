@@ -113,16 +113,21 @@ UroSubsonus::UroSubsonus(std::shared_ptr<UroIns> ins) : ins_(ins) {}
 
 void UroSubsonus::receive_subsonus(){
   
-/*
+  /*
   //プログラム確認用(実運用時コメントアウト)
   static int i = 0;
 
+  surface_system_state_packet.unix_time_seconds = i/50 + 10;
+  surface_system_state_packet.microseconds = i/50 + 15;
   surface_system_state_packet.latitude        = (35 - i%10000 * 0.00000001) *  DEGREES_TO_RADIANS;
   surface_system_state_packet.longitude       = (139 + i%10000 * 0.00000001) * DEGREES_TO_RADIANS;
   surface_system_state_packet.height          = 0 + i%10000 * 0.0001;
   surface_system_state_packet.orientation[0]  = (0 + i%10000 * 0.0001) * DEGREES_TO_RADIANS;
   surface_system_state_packet.orientation[1]  = (0 - i%10000 * 0.0001) * DEGREES_TO_RADIANS;
   surface_system_state_packet.orientation[2]  = (0 + i%10000 * 0.01) * DEGREES_TO_RADIANS;
+  surface_system_state_packet.system_status.b.maximum_temperature_shutdown_alarm  = 0;
+  surface_system_state_packet.system_status.b.aiding_gnss_time_sync_alarm  = 1;
+  surface_system_state_packet.filter_status.b.gnss_fix_type  = 7;
   ins_->set_ship_data(surface_system_state_packet);
 
   if (i%200 == 0){
@@ -140,16 +145,23 @@ void UroSubsonus::receive_subsonus(){
     subsonus_track_packet.height          = 0 + i%10000 * 0.0002;
     subsonus_track_packet.depth           = 10 + i%10000 * 0.001;
     if ((i%400 ==0)){
-      ins_->set_usbl_data(subsonus_track_packet);
+      ins_->set_track_data(subsonus_track_packet);
     }
   }
   
+  subsea_system_state_packet.unix_time_seconds = i/50 + 20;
+  subsea_system_state_packet.microseconds = i/50 + 25;
   subsea_system_state_packet.latitude        = (35 + i%10000 * 0.00000002) *  DEGREES_TO_RADIANS;
   subsea_system_state_packet.longitude       = (139 - i%10000 * 0.00000004) * DEGREES_TO_RADIANS;
   subsea_system_state_packet.height          = 0 + i%10000 * 0.0003;
   subsea_system_state_packet.orientation[0]  = (0 - i%10000 * 0.0004) * DEGREES_TO_RADIANS;
   subsea_system_state_packet.orientation[1]  = (0 + i%10000 * 0.0007) * DEGREES_TO_RADIANS;
   subsea_system_state_packet.orientation[2]  = (0 - i%10000 * 0.06) * DEGREES_TO_RADIANS;
+  subsea_system_state_packet.system_status.b.maximum_temperature_shutdown_alarm  = 1;
+  subsea_system_state_packet.system_status.b.aiding_gnss_time_sync_alarm  = 0;
+  subsea_system_state_packet.filter_status.b.gnss_fix_type  = 4;
+  subsea_system_state_packet.filter_status.b.acoustic_heading_active  = 0;
+  subsea_system_state_packet.filter_status.b.internal_gnss_enabled  = 1;
   ins_->set_subsea_data(subsea_system_state_packet);
   
 
@@ -219,7 +231,7 @@ void UroSubsonus::receive_subsonus(){
           //printf("\tLatitude = %f, Longitude = %f, Height = %f\n", subsonus_track_packet.latitude * RADIANS_TO_DEGREES, subsonus_track_packet.longitude * RADIANS_TO_DEGREES, subsonus_track_packet.height);
           //printf("\tRange = %f, Azimuth = %f, Elevation = %f\n", subsonus_track_packet.range, subsonus_track_packet.azimuth * RADIANS_TO_DEGREES, subsonus_track_packet.elevation * RADIANS_TO_DEGREES);
           //this->track_callback(subsonus_track_packet);
-          ins_->set_usbl_data(subsonus_track_packet);
+          ins_->set_track_data(subsonus_track_packet);
         }
       }
       else
