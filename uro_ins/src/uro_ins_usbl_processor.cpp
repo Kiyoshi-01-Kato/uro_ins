@@ -654,6 +654,7 @@ void UroIns::publish_log_data()
   usbl_track.range = track_.range;
   usbl_track.azimuth = track_.azimuth * RADIANS_TO_DEGREES;
   usbl_track.elevation = track_.elevation * RADIANS_TO_DEGREES;
+  usbl_track.usbl_track_interval = usbl_marker_count * 0.2;
   usbl_track_->publish(usbl_track);
   
   auto uro_ins = uro_ins_msgs::msg::UroIns();

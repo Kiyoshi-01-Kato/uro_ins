@@ -10,3 +10,5 @@ float64 subsea_acoustic_depth
 float64 range
 float64 azimuth
 float64 elevation
+
+float64 usbl_track_interval
