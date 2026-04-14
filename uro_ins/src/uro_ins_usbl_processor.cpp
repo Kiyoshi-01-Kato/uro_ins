@@ -589,6 +589,9 @@ void UroIns::publish_log_data()
   usbl_surface.ship_geopoint.latitude = surface_.latitude * RADIANS_TO_DEGREES;
   usbl_surface.ship_geopoint.longitude = surface_.longitude * RADIANS_TO_DEGREES;
   usbl_surface.ship_geopoint.altitude = surface_.height;
+  usbl_surface.ship_geopoint_standard_deviation.latitude = surface_.position_standard_deviation[0];
+  usbl_surface.ship_geopoint_standard_deviation.longitude = surface_.position_standard_deviation[1];
+  usbl_surface.ship_geopoint_standard_deviation.altitude = surface_.position_standard_deviation[2];
   usbl_surface.map2ship.position.x = ship_tf.transform.translation.x;
   usbl_surface.map2ship.position.y = ship_tf.transform.translation.y;
   usbl_surface.map2ship.position.z = track_.observer_depth;

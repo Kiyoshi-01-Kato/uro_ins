@@ -3,6 +3,7 @@
 std_msgs/Header header
 
 geographic_msgs/GeoPoint ship_geopoint
+geographic_msgs/GeoPoint ship_geopoint_standard_deviation
 geometry_msgs/Pose map2ship
 bool surface_maximum_temperature_shutdown_alarm
 bool surface_aiding_gnss_time_sync_alarm
