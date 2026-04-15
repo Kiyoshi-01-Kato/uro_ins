@@ -4,6 +4,7 @@ std_msgs/Header header
 
 geographic_msgs/GeoPoint usbl_geopoint
 geometry_msgs/Pose map2usbl
+float64 subsea_depth
 bool subsea_maximum_temperature_shutdown_alarm
 bool subsea_aiding_gnss_time_sync_alarm
 uint32 subsea_gnss_fix_type

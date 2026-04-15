@@ -240,6 +240,7 @@ void UroIns::broadcast_ship_tf()
   ship_tf.header.stamp = now;
   ship_tf.transform.translation.x = y;    //この出力はxが東、yが北
   ship_tf.transform.translation.y = - x;  //この出力はxが東、yが北
+  ship_tf.transform.translation.z = - z;  //下が正
   tf2::Quaternion quat;
   quat.setRPY(0.0, 0.0, - surface_.orientation[2]);
   ship_tf.transform.rotation.x = quat.x();
@@ -594,12 +595,13 @@ void UroIns::publish_log_data()
   usbl_surface.ship_geopoint_standard_deviation.altitude = surface_.position_standard_deviation[2];
   usbl_surface.map2ship.position.x = ship_tf.transform.translation.x;
   usbl_surface.map2ship.position.y = ship_tf.transform.translation.y;
-  usbl_surface.map2ship.position.z = track_.observer_depth;
+  usbl_surface.map2ship.position.z = ship_tf.transform.translation.z;
   quat.setRPY(surface_.orientation[0], surface_.orientation[1], surface_.orientation[2]);
   usbl_surface.map2ship.orientation.x = quat.x();
   usbl_surface.map2ship.orientation.y = quat.y();
   usbl_surface.map2ship.orientation.z = quat.z();
   usbl_surface.map2ship.orientation.w = quat.w();
+  usbl_surface.surface_depth = track_.observer_depth;
   usbl_surface.surface_maximum_temperature_shutdown_alarm  = surface_.system_status.b.maximum_temperature_shutdown_alarm;
   usbl_surface.surface_aiding_gnss_time_sync_alarm         = surface_.system_status.b.aiding_gnss_time_sync_alarm;
   usbl_surface.surface_gnss_fix_type                       = surface_.filter_status.b.gnss_fix_type;
@@ -615,12 +617,13 @@ void UroIns::publish_log_data()
   prij.Forward(subsea_.latitude * RADIANS_TO_DEGREES, subsea_.longitude * RADIANS_TO_DEGREES, subsea_.height, x, y, z);
   usbl_subsea.map2usbl.position.x = y;  //この出力はxが東、yが北
   usbl_subsea.map2usbl.position.y = x;  //この出力はxが東、yが北
-  usbl_subsea.map2usbl.position.z = track_.depth;
+  usbl_subsea.map2usbl.position.z = -z; //下が正
   quat.setRPY(subsea_.orientation[0], subsea_.orientation[1], subsea_.orientation[2]);
   usbl_subsea.map2usbl.orientation.x = quat.x();
   usbl_subsea.map2usbl.orientation.y = quat.y();
   usbl_subsea.map2usbl.orientation.z = quat.z();
   usbl_subsea.map2usbl.orientation.w = quat.w();
+  usbl_subsea.map2usbl.depth = track_.depth;
   usbl_subsea.subsea_maximum_temperature_shutdown_alarm = subsea_.system_status.b.maximum_temperature_shutdown_alarm;
   usbl_subsea.subsea_aiding_gnss_time_sync_alarm        = subsea_.system_status.b.aiding_gnss_time_sync_alarm;
   usbl_subsea.subsea_gnss_fix_type                      = subsea_.filter_status.b.gnss_fix_type;
@@ -637,22 +640,37 @@ void UroIns::publish_log_data()
   usbl_track.usbl_geopoint.latitude = track_.latitude * RADIANS_TO_DEGREES;
   usbl_track.usbl_geopoint.longitude = track_.longitude * RADIANS_TO_DEGREES;
   usbl_track.usbl_geopoint.altitude = track_.height;
-  usbl_track.ship2usbl.position.x = track_.ned_position[0];
-  usbl_track.ship2usbl.position.y = track_.ned_position[1];
-  usbl_track.ship2usbl.position.z = track_.ned_position[2];
-  usbl_track.ship2usbl.orientation.x = 0;
-  usbl_track.ship2usbl.orientation.y = 0;
-  usbl_track.ship2usbl.orientation.z = 0;
-  usbl_track.ship2usbl.orientation.w = 1;
+  usbl_track.ship2usbl_frd.position.x = track_.raw_position[0];
+  usbl_track.ship2usbl_frd.position.y = track_.raw_position[1];
+  usbl_track.ship2usbl_frd.position.z = track_.raw_position[2];
+  usbl_track.ship2usbl_frd.orientation.x = 0;
+  usbl_track.ship2usbl_frd.orientation.y = 0;
+  usbl_track.ship2usbl_frd.orientation.z = 0;
+  usbl_track.ship2usbl_frd.orientation.w = 1;
+  usbl_track.ship2usbl_tilt_correction.position.x = track_.corrected_position[0];
+  usbl_track.ship2usbl_tilt_correction.position.y = track_.corrected_position[1];
+  usbl_track.ship2usbl_tilt_correction.position.z = track_.corrected_position[2];
+  usbl_track.ship2usbl_tilt_correction.orientation.x = 0;
+  usbl_track.ship2usbl_tilt_correction.orientation.y = 0;
+  usbl_track.ship2usbl_tilt_correction.orientation.z = 0;
+  usbl_track.ship2usbl_tilt_correction.orientation.w = 1;
+  usbl_track.ship2usbl_ned.position.x = track_.ned_position[0];
+  usbl_track.ship2usbl_ned.position.y = track_.ned_position[1];
+  usbl_track.ship2usbl_ned.position.z = track_.ned_position[2];
+  usbl_track.ship2usbl_ned.orientation.x = 0;
+  usbl_track.ship2usbl_ned.orientation.y = 0;
+  usbl_track.ship2usbl_ned.orientation.z = 0;
+  usbl_track.ship2usbl_ned.orientation.w = 1;
   prij.Forward(track_.latitude * RADIANS_TO_DEGREES, track_.longitude * RADIANS_TO_DEGREES, track_.height, x, y, z);
   usbl_track.map2usbl.position.x = y;  //この出力はxが東、yが北
   usbl_track.map2usbl.position.y = x;  //この出力はxが東、yが北
-  usbl_track.map2usbl.position.z = track_.depth;
+  usbl_track.map2usbl.position.z = -z; //下が正
   usbl_track.map2usbl.orientation.x = 0;
   usbl_track.map2usbl.orientation.y = 0;
   usbl_track.map2usbl.orientation.z = 0;
   usbl_track.map2usbl.orientation.w = 1;
   usbl_track.surface_depth = track_.observer_depth;
+  usbl_track.subsea_depth = track_.depth;
   usbl_track.subsea_acoustic_depth = track_.observer_depth + track_.ned_position[2];
   usbl_track.range = track_.range;
   usbl_track.azimuth = track_.azimuth * RADIANS_TO_DEGREES;
