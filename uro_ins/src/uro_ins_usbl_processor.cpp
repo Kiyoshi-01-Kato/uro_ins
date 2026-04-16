@@ -623,7 +623,7 @@ void UroIns::publish_log_data()
   usbl_subsea.map2usbl.orientation.y = quat.y();
   usbl_subsea.map2usbl.orientation.z = quat.z();
   usbl_subsea.map2usbl.orientation.w = quat.w();
-  usbl_subsea.map2usbl.depth = track_.depth;
+  usbl_subsea.subsea_depth = track_.depth;
   usbl_subsea.subsea_maximum_temperature_shutdown_alarm = subsea_.system_status.b.maximum_temperature_shutdown_alarm;
   usbl_subsea.subsea_aiding_gnss_time_sync_alarm        = subsea_.system_status.b.aiding_gnss_time_sync_alarm;
   usbl_subsea.subsea_gnss_fix_type                      = subsea_.filter_status.b.gnss_fix_type;
